@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: API Gateway
+  cloud:
+    gateway:
+      routes:
+        # IAM Service Routes
+        - id: iam-service
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/v1/authentication/**
+            - Path=/api/v1/users/**
+            - Path=/api/v1/roles/**
+          filters:
+            - StripPrefix=1
+        
+        # Profiles Service Routes
+        - id: profiles-service
+          uri: http://localhost:8082
+          predicates:
+            - Path=/api/v1/lawyers/**
+            - Path=/api/v1/clients/**
+            - Path=/api/v1/lawyer-specialties/**
+          filters:
+            - StripPrefix=1
+        
+        # Cases Service Routes
+        - id: cases-service
+          uri: http://localhost:8083
+          predicates:
+            - Path=/api/v1/cases/**
+            - Path=/api/v1/applications/**
+            - Path=/api/v1/invitations/**
+            - Path=/api/v1/comments/**
+          filters:
+            - StripPrefix=1
+
+server:
+  port: 8080
+
+# OpenAPI Documentation for API Gateway
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: API Gateway
+        url: /v3/api-docs
+    urls-primary-name: API Gateway
+

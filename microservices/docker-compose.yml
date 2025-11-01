@@ -1,0 +1,140 @@
+version: '3.8'
+
+services:
+  # MySQL Database for IAM Service
+  iam-db:
+    image: mysql:8.0
+    container_name: iam-db
+    environment:
+      MYSQL_ROOT_PASSWORD: maxoz9987
+      MYSQL_DATABASE: iam-db
+    ports:
+      - "3307:3306"
+    volumes:
+      - iam-db-data:/var/lib/mysql
+    networks:
+      - lawconnect-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MySQL Database for Profiles Service
+  profiles-db:
+    image: mysql:8.0
+    container_name: profiles-db
+    environment:
+      MYSQL_ROOT_PASSWORD: maxoz9987
+      MYSQL_DATABASE: profiles-db
+    ports:
+      - "3308:3306"
+    volumes:
+      - profiles-db-data:/var/lib/mysql
+    networks:
+      - lawconnect-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MySQL Database for Cases Service
+  cases-db:
+    image: mysql:8.0
+    container_name: cases-db
+    environment:
+      MYSQL_ROOT_PASSWORD: maxoz9987
+      MYSQL_DATABASE: cases-db
+    ports:
+      - "3309:3306"
+    volumes:
+      - cases-db-data:/var/lib/mysql
+    networks:
+      - lawconnect-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # IAM Service
+  iam-service:
+    build:
+      context: ./iam
+      dockerfile: Dockerfile
+    container_name: iam-service
+    ports:
+      - "8081:8081"
+    environment:
+      MYSQL_ROOT_PASSWORD: maxoz9987
+      JWT_SECRET: cd2f1644-8b83-4f93-ab86-a156bb696f69
+      SPRING_DATASOURCE_URL: jdbc:mysql://iam-db:3306/iam-db
+    depends_on:
+      iam-db:
+        condition: service_healthy
+    networks:
+      - lawconnect-network
+    restart: unless-stopped
+
+  # Profiles Service
+  profiles-service:
+    build:
+      context: ./profiles
+      dockerfile: Dockerfile
+    container_name: profiles-service
+    ports:
+      - "8082:8082"
+    environment:
+      MYSQL_ROOT_PASSWORD: maxoz9987
+      SPRING_DATASOURCE_URL: jdbc:mysql://profiles-db:3306/profiles-db
+    depends_on:
+      profiles-db:
+        condition: service_healthy
+    networks:
+      - lawconnect-network
+    restart: unless-stopped
+
+  # Cases Service
+  cases-service:
+    build:
+      context: ./cases
+      dockerfile: Dockerfile
+    container_name: cases-service
+    ports:
+      - "8083:8083"
+    environment:
+      MYSQL_ROOT_PASSWORD: maxoz9987
+      SPRING_DATASOURCE_URL: jdbc:mysql://cases-db:3306/cases-db
+    depends_on:
+      cases-db:
+        condition: service_healthy
+    networks:
+      - lawconnect-network
+    restart: unless-stopped
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+      dockerfile: Dockerfile
+    container_name: api-gateway
+    ports:
+      - "8080:8080"
+    depends_on:
+      - iam-service
+      - profiles-service
+      - cases-service
+    networks:
+      - lawconnect-network
+    restart: unless-stopped
+
+networks:
+  lawconnect-network:
+    driver: bridge
+
+volumes:
+  iam-db-data:
+  profiles-db-data:
+  cases-db-data:
+
