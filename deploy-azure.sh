@@ -109,13 +109,17 @@ fi
 # Mostrar logs recientes
 echo -e "${GREEN}▶ Mostrando últimas líneas de logs de cada servicio...${NC}"
 echo -e "${YELLOW}━━━━ IAM Service ━━━━${NC}"
-sudo docker-compose logs iam-service | tail -10
+sudo docker-compose logs iam-service | tail -20
+echo ""
 echo -e "${YELLOW}━━━━ Profiles Service ━━━━${NC}"
-sudo docker-compose logs profiles-service | tail -10
+sudo docker-compose logs profiles-service | tail -20
+echo ""
 echo -e "${YELLOW}━━━━ Cases Service ━━━━${NC}"
-sudo docker-compose logs cases-service | tail -10
+sudo docker-compose logs cases-service | tail -20
+echo ""
 echo -e "${YELLOW}━━━━ API Gateway ━━━━${NC}"
-sudo docker-compose logs api-gateway | tail -10
+sudo docker-compose logs api-gateway | tail -20
+echo ""
 
 # Paso 11: Configurar inicio automático
 echo -e "${GREEN}▶ Configurando inicio automático...${NC}"
@@ -154,10 +158,47 @@ echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━
 echo -e "${GREEN}✅ Despliegue completado exitosamente!${NC}"
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo ""
-echo "📊 Información de servicios:"
-echo "  • API disponible en: http://$(hostname -I | awk '{print $1}')/"
-echo "  • Swagger UI: http://$(hostname -I | awk '{print $1}')/swagger-ui.html"
-echo "  • Health Check: http://$(hostname -I | awk '{print $1}')/health"
+
+# Obtener IPs
+VM_IP=$(hostname -I | awk '{print $1}')
+LOCALHOST_IP="localhost"
+
+echo "📊 Información de puertos y URLs:"
+echo "  • Puerto Nginx: 80"
+echo "  • Puerto API Gateway: 8080"
+echo "  • Puerto IAM: 8081"
+echo "  • Puerto Profiles: 8082"
+echo "  • Puerto Cases: 8083"
+echo "  • Puertos MySQL: 3307, 3308, 3309"
+echo ""
+echo "🌐 URLs de acceso:"
+echo "  • Desde localhost:"
+echo "    - API: http://$LOCALHOST_IP/api/v1/"
+echo "    - Swagger: http://$LOCALHOST_IP/swagger-ui.html"
+echo "    - Health: http://$LOCALHOST_IP/health"
+echo ""
+echo "  • Desde Internet (necesitas configurar Azure NSG puerto 80):"
+echo "    - API: http://$VM_IP/api/v1/"
+echo "    - Swagger: http://$VM_IP/swagger-ui.html"
+echo "    - Health: http://$VM_IP/health"
+echo ""
+
+# Probar endpoints
+echo "🧪 Probando endpoints..."
+echo -e "${GREEN}▶ Probando health check desde localhost...${NC}"
+if curl -s http://localhost/health > /dev/null 2>&1; then
+    echo -e "${GREEN}✓ Health check OK desde localhost${NC}"
+else
+    echo -e "${YELLOW}⚠ Health check no responde desde localhost (puede tardar un poco más)${NC}"
+fi
+
+echo -e "${GREEN}▶ Probando desde IP $VM_IP...${NC}"
+if curl -s http://$VM_IP/health > /dev/null 2>&1; then
+    echo -e "${GREEN}✓ Health check OK desde IP $VM_IP${NC}"
+else
+    echo -e "${YELLOW}⚠ Health check no responde desde IP (verificar Azure NSG)${NC}"
+fi
+
 echo ""
 echo -e "${YELLOW}ℹ Si hay servicios en 'Restarting', espera 60 segundos más y verifica:${NC}"
 echo -e "${YELLOW}  sudo docker-compose logs -f [nombre-servicio]${NC}"
