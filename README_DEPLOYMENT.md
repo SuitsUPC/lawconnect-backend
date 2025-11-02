@@ -1,64 +1,75 @@
 # 🚀 Despliegue LawConnect en Azure VM
 
-## 📋 Paso 1: Ejecutar script de despliegue
+## ✅ Listo: Todo configurado
+
+Solo ejecuta esto en tu VM:
 
 ```bash
 cd ~/lawconnect-backend
-bash deploy-azure.sh
+git pull
+
+# Detener servicios actuales
+cd microservices
+sudo docker-compose down
+
+# Reconstruir JARs correctamente  
+cd ~/lawconnect-backend/microservices/iam
+mvn clean package spring-boot:repackage -DskipTests
+
+cd ../profiles
+mvn clean package spring-boot:repackage -DskipTests
+
+cd ../cases
+mvn clean package spring-boot:repackage -DskipTests
+
+cd ../api-gateway
+mvn clean package spring-boot:repackage -DskipTests
+
+cd ..
+
+# Levantar servicios
+sudo docker-compose up -d --build
+
+# Esperar y verificar
+sleep 60
+sudo docker-compose ps
 ```
 
-**¡Listo!** El script instala todo automáticamente.
+## 🎯 ¿Las bases de datos?
 
-## ✅ Paso 2: Probar
+**SÍ**, se crean automáticamente:
+- MySQL crea las databases: `iam-db`, `profiles-db`, `cases-db` 
+- Hibernate crea las tablas: `spring.jpa.hibernate.ddl-auto=update`
+
+## ✅ Verificar
 
 ```bash
-# Ver contenedores
-cd ~/lawconnect-backend/microservices
+# Estado de servicios
 sudo docker-compose ps
+
+# Logs
+sudo docker-compose logs -f
 
 # Probar API
 curl http://localhost/api/v1/users
 
-# Swagger en navegador
+# Swagger
 http://TU_IP_AZURE/swagger-ui.html
 ```
 
-## 📊 Arquitectura
-
-```
-Internet → Nginx:80 → API Gateway:8080 → Microservicios
-                                    ├─ IAM:8081
-                                    ├─ Profiles:8082
-                                    └─ Cases:8083
-```
-
-## 🔄 Comandos útiles
+## 🔍 Si hay problemas
 
 ```bash
-# Ver logs
-cd ~/lawconnect-backend/microservices
-sudo docker-compose logs -f
+# Ver logs de un servicio
+sudo docker-compose logs iam-service | tail -100
 
 # Reiniciar
-sudo docker-compose restart
+sudo docker-compose restart iam-service
 
-# Reconstruir
-sudo docker-compose down
-sudo docker-compose up -d --build
-```
-
-## 🆘 Problemas
-
-```bash
-# Ver qué falla
-sudo docker-compose logs -f
-sudo tail -f /var/log/nginx/lawconnect_error.log
-
-# Reiniciar Docker
-sudo systemctl restart docker
+# Ver errores
+sudo docker-compose logs | grep -i error
 ```
 
 ---
 
-**¡Listo!** Accede a `http://TU_IP_AZURE/swagger-ui.html` 🎉
-
+**Después de ejecutar los comandos, espera 60 segundos y verifica con `sudo docker-compose ps`**
