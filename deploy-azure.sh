@@ -231,6 +231,42 @@ else
 fi
 
 echo ""
+echo -e "${GREEN}🧪 Probando documentación Swagger (OpenAPI JSON)...${NC}"
+echo ""
+GATEWAY_DOC_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/v3/api-docs 2>/dev/null)
+IAM_DOC_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/iam-api-docs/v3/api-docs 2>/dev/null)
+PROFILES_DOC_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/profiles-api-docs/v3/api-docs 2>/dev/null)
+CASES_DOC_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/cases-api-docs/v3/api-docs 2>/dev/null)
+
+echo -e "${GREEN}▶ API Gateway OpenAPI...${NC}"
+if [ "$GATEWAY_DOC_RESPONSE" = "200" ]; then
+    echo -e "${GREEN}✓ OK (HTTP $GATEWAY_DOC_RESPONSE)${NC}"
+else
+    echo -e "${YELLOW}⚠ No responde (HTTP $GATEWAY_DOC_RESPONSE)${NC}"
+fi
+
+echo -e "${GREEN}▶ IAM Service OpenAPI...${NC}"
+if [ "$IAM_DOC_RESPONSE" = "200" ]; then
+    echo -e "${GREEN}✓ OK (HTTP $IAM_DOC_RESPONSE)${NC}"
+else
+    echo -e "${YELLOW}⚠ No responde (HTTP $IAM_DOC_RESPONSE)${NC}"
+fi
+
+echo -e "${GREEN}▶ Profiles Service OpenAPI...${NC}"
+if [ "$PROFILES_DOC_RESPONSE" = "200" ]; then
+    echo -e "${GREEN}✓ OK (HTTP $PROFILES_DOC_RESPONSE)${NC}"
+else
+    echo -e "${YELLOW}⚠ No responde (HTTP $PROFILES_DOC_RESPONSE)${NC}"
+fi
+
+echo -e "${GREEN}▶ Cases Service OpenAPI...${NC}"
+if [ "$CASES_DOC_RESPONSE" = "200" ]; then
+    echo -e "${GREEN}✓ OK (HTTP $CASES_DOC_RESPONSE)${NC}"
+else
+    echo -e "${YELLOW}⚠ No responde (HTTP $CASES_DOC_RESPONSE)${NC}"
+fi
+
+echo ""
 echo -e "${GREEN}📊 Resumen de pruebas de endpoints:${NC}"
 echo "  • Puerto 80 (Nginx): http://localhost/"
 echo "  • Puerto 8080 (API Gateway): http://localhost:8080/"
