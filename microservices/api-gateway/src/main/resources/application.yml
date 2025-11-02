@@ -5,28 +5,56 @@ spring:
     gateway:
       routes:
         # IAM Service Routes
-        - id: iam-service
+        - id: iam-service-auth
           uri: http://iam-service:8081
           predicates:
             - Path=/api/v1/authentication/**
+        
+        - id: iam-service-users
+          uri: http://iam-service:8081
+          predicates:
             - Path=/api/v1/users/**
+        
+        - id: iam-service-roles
+          uri: http://iam-service:8081
+          predicates:
             - Path=/api/v1/roles/**
         
         # Profiles Service Routes
-        - id: profiles-service
+        - id: profiles-service-lawyers
           uri: http://profiles-service:8082
           predicates:
             - Path=/api/v1/lawyers/**
+        
+        - id: profiles-service-clients
+          uri: http://profiles-service:8082
+          predicates:
             - Path=/api/v1/clients/**
+        
+        - id: profiles-service-specialties
+          uri: http://profiles-service:8082
+          predicates:
             - Path=/api/v1/lawyer-specialties/**
         
         # Cases Service Routes
-        - id: cases-service
+        - id: cases-service-cases
           uri: http://cases-service:8083
           predicates:
             - Path=/api/v1/cases/**
+        
+        - id: cases-service-applications
+          uri: http://cases-service:8083
+          predicates:
             - Path=/api/v1/applications/**
+        
+        - id: cases-service-invitations
+          uri: http://cases-service:8083
+          predicates:
             - Path=/api/v1/invitations/**
+        
+        - id: cases-service-comments
+          uri: http://cases-service:8083
+          predicates:
             - Path=/api/v1/comments/**
         
         # API Docs Routes for Swagger UI
