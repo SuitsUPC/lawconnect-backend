@@ -10,20 +10,43 @@ bash deploy-azure.sh
 
 **¡Eso es todo!** El script hace todo automáticamente.
 
-## 🌐 Configurar Azure Network Security Group
+## 🌐 Configurar Azure Network Security Group (REQUERIDO)
 
-**IMPORTANTE**: Después del despliegue, configura el NSG en Azure para permitir tráfico:
+**URGENTE**: Sin esta configuración NO podrás acceder desde Internet:
 
-1. Ve a Azure Portal → Virtual Machine → Networking
-2. Agrega regla de entrada:
-   - Puerto: `80`
-   - Protocolo: TCP
-   - Source: Any
-   - Name: AllowHTTP
+### Opción 1: Desde Azure Portal
+1. Ve a https://portal.azure.com
+2. Busca tu VM: `vm-lawconnectbackend-prod-001`
+3. Click en "Networking" → "Add inbound port rule"
+4. Configura:
+   - **Source**: Any
+   - **Source port ranges**: *
+   - **Destination**: Any
+   - **Destination port ranges**: 80
+   - **Protocol**: TCP
+   - **Action**: Allow
+   - **Priority**: 1000
+   - **Name**: AllowHTTP80
+5. Click "Add"
 
-Si quieres exponer también el 8080 para desarrollo:
-- Puerto: `8080`
-- Protocolo: TCP
+### Opción 2: Desde terminal (si tienes Azure CLI)
+```bash
+az network nsg rule create \
+  --resource-group tu-resource-group \
+  --nsg-name tu-nsg-name \
+  --name AllowHTTP \
+  --priority 1000 \
+  --protocol Tcp \
+  --destination-port-ranges 80 \
+  --access Allow
+```
+
+**TU IP PÚBLICA**: `20.150.212.89`
+
+**URLs para probar**:
+- http://20.150.212.89/swagger-ui.html
+- http://20.150.212.89/api/v1/users
+- http://20.150.212.89/health
 
 ## 🎯 ¿Las bases de datos?
 
