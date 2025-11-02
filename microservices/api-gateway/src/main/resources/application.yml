@@ -62,10 +62,10 @@ springdoc:
       - name: API Gateway
         url: /v3/api-docs
       - name: IAM Service
-        url: /iam-api-docs/v3/api-docs
+        url: /iam-api-docs/api-docs
       - name: Profiles Service
-        url: /profiles-api-docs/v3/api-docs
+        url: /profiles-api-docs/api-docs
       - name: Cases Service
-        url: /cases-api-docs/v3/api-docs
+        url: /cases-api-docs/api-docs
     urls-primary-name: API Gateway
 

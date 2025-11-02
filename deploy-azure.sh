@@ -234,9 +234,9 @@ echo ""
 echo -e "${GREEN}🧪 Probando documentación Swagger (OpenAPI JSON)...${NC}"
 echo ""
 GATEWAY_DOC_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/v3/api-docs 2>/dev/null)
-IAM_DOC_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/iam-api-docs/v3/api-docs 2>/dev/null)
-PROFILES_DOC_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/profiles-api-docs/v3/api-docs 2>/dev/null)
-CASES_DOC_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/cases-api-docs/v3/api-docs 2>/dev/null)
+IAM_DOC_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/iam-api-docs/api-docs 2>/dev/null)
+PROFILES_DOC_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/profiles-api-docs/api-docs 2>/dev/null)
+CASES_DOC_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/cases-api-docs/api-docs 2>/dev/null)
 
 echo -e "${GREEN}▶ API Gateway OpenAPI...${NC}"
 if [ "$GATEWAY_DOC_RESPONSE" = "200" ]; then
