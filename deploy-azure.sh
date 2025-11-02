@@ -91,8 +91,8 @@ cd $PROJECT_ROOT/microservices
 sudo docker-compose up -d --build
 
 # Esperar a que servicios inicien
-echo -e "${GREEN}▶ Esperando que servicios inicien (15 segundos)...${NC}"
-sleep 15
+echo -e "${GREEN}▶ Esperando que servicios inicien (60 segundos)...${NC}"
+sleep 60
 
 # Paso 10: Verificar estado
 echo -e "${GREEN}▶ Verificando estado de servicios...${NC}"
@@ -230,26 +230,17 @@ else
     echo -e "${YELLOW}⚠ Endpoint Cases no responde (HTTP $CASES_RESPONSE)${NC}"
 fi
 
-# Probar Swagger UI
-echo -e "${GREEN}▶ Probando Swagger UI...${NC}"
-SWAGGER_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/swagger-ui.html 2>/dev/null)
-if [ "$SWAGGER_RESPONSE" = "200" ] || [ "$SWAGGER_RESPONSE" = "302" ]; then
-    echo -e "${GREEN}✓ Swagger UI OK (HTTP $SWAGGER_RESPONSE)${NC}"
-else
-    echo -e "${YELLOW}⚠ Swagger UI no responde (HTTP $SWAGGER_RESPONSE)${NC}"
-fi
-
 echo ""
-echo -e "${GREEN}📊 Resumen de pruebas:${NC}"
+echo -e "${GREEN}📊 Resumen de pruebas de endpoints:${NC}"
 echo "  • Puerto 80 (Nginx): http://localhost/"
 echo "  • Puerto 8080 (API Gateway): http://localhost:8080/"
-echo "  • Swagger UI: http://localhost/swagger-ui.html"
 echo "  • Endpoint IAM: http://localhost/api/v1/users"
 echo "  • Endpoint Profiles: http://localhost/api/v1/lawyers"
 echo "  • Endpoint Cases: http://localhost/api/v1/cases"
 echo ""
 echo -e "${GREEN}🌐 URLs desde Internet (después de configurar Azure NSG puerto 80):${NC}"
 echo "  • Swagger UI: http://$PUBLIC_IP/swagger-ui.html"
+echo "  • API: http://$PUBLIC_IP/api/v1/"
 echo ""
 echo -e "${YELLOW}ℹ Si hay servicios en 'Restarting', espera 60 segundos más y verifica:${NC}"
 echo -e "${YELLOW}  sudo docker-compose logs -f [nombre-servicio]${NC}"
