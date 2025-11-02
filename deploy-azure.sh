@@ -28,27 +28,27 @@ sudo usermod -aG docker $USER
 # Paso 4: Navegar al directorio del proyecto
 echo -e "${GREEN}▶ Navegando al directorio del proyecto...${NC}"
 cd ~/lawconnect-backend || { echo -e "${RED}✖ No se encontró el directorio lawconnect-backend${NC}"; exit 1; }
-echo -e "${GREEN}✓ Directorio encontrado: $(pwd)${NC}"
+PROJECT_ROOT=$(pwd)
+echo -e "${GREEN}✓ Directorio encontrado: $PROJECT_ROOT${NC}"
 
-# Paso 5: Construir los JARs
+# Paso 5: Construir los JARs (con output silencioso para Maven)
 echo -e "${GREEN}▶ Construyendo IAM Service...${NC}"
-cd microservices/iam && mvn clean package spring-boot:repackage -DskipTests && echo -e "${GREEN}✓ IAM construido${NC}"
+cd $PROJECT_ROOT/microservices/iam && mvn clean package spring-boot:repackage -DskipTests -q && echo -e "${GREEN}✓ IAM construido${NC}"
 
 echo -e "${GREEN}▶ Construyendo Profiles Service...${NC}"
-cd ../profiles && mvn clean package spring-boot:repackage -DskipTests && echo -e "${GREEN}✓ Profiles construido${NC}"
+cd $PROJECT_ROOT/microservices/profiles && mvn clean package spring-boot:repackage -DskipTests -q && echo -e "${GREEN}✓ Profiles construido${NC}"
 
 echo -e "${GREEN}▶ Construyendo Cases Service...${NC}"
-cd ../cases && mvn clean package spring-boot:repackage -DskipTests && echo -e "${GREEN}✓ Cases construido${NC}"
+cd $PROJECT_ROOT/microservices/cases && mvn clean package spring-boot:repackage -DskipTests -q && echo -e "${GREEN}✓ Cases construido${NC}"
 
 echo -e "${GREEN}▶ Construyendo API Gateway...${NC}"
-cd ../api-gateway && mvn clean package spring-boot:repackage -DskipTests && echo -e "${GREEN}✓ API Gateway construido${NC}"
+cd $PROJECT_ROOT/microservices/api-gateway && mvn clean package spring-boot:repackage -DskipTests -q && echo -e "${GREEN}✓ API Gateway construido${NC}"
 
-cd ..
 echo -e "${GREEN}✓ Todos los JARs construidos correctamente${NC}"
 
 # Paso 6: Limpiar contenedores existentes
 echo -e "${GREEN}▶ Limpiando contenedores Docker existentes...${NC}"
-cd microservices
+cd $PROJECT_ROOT/microservices
 if sudo docker-compose ps | grep -q "Up\|Restarting"; then
     echo -e "${YELLOW}⚠ Se encontraron contenedores corriendo. Deteniéndolos...${NC}"
     sudo docker-compose down
@@ -56,11 +56,10 @@ if sudo docker-compose ps | grep -q "Up\|Restarting"; then
 else
     echo -e "${GREEN}✓ No hay contenedores corriendo${NC}"
 fi
-cd ..
 
 # Paso 7: Configurar Nginx
 echo -e "${GREEN}▶ Configurando Nginx...${NC}"
-sudo cp nginx/nginx.conf /etc/nginx/sites-available/lawconnect
+sudo cp $PROJECT_ROOT/microservices/nginx/nginx.conf /etc/nginx/sites-available/lawconnect
 sudo ln -sf /etc/nginx/sites-available/lawconnect /etc/nginx/sites-enabled/
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo systemctl restart nginx
@@ -88,7 +87,7 @@ echo -e "${GREEN}✓ Todos los JARs existen${NC}"
 
 # Paso 9: Levantar servicios Docker
 echo -e "${GREEN}▶ Levantando servicios con Docker Compose...${NC}"
-cd microservices
+cd $PROJECT_ROOT/microservices
 sudo docker-compose up -d --build
 
 # Esperar a que servicios inicien
