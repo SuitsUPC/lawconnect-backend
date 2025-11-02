@@ -160,8 +160,9 @@ echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━
 echo ""
 
 # Obtener IPs
-VM_IP=$(hostname -I | awk '{print $1}')
 LOCALHOST_IP="localhost"
+# Intentar obtener IP pública, si falla usar la primera IP del hostname
+PUBLIC_IP=$(curl -s https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')
 
 echo "📊 Información de puertos y URLs:"
 echo "  • Puerto Nginx: 80"
@@ -178,9 +179,9 @@ echo "    - Swagger: http://$LOCALHOST_IP/swagger-ui.html"
 echo "    - Health: http://$LOCALHOST_IP/health"
 echo ""
 echo "  • Desde Internet (necesitas configurar Azure NSG puerto 80):"
-echo "    - API: http://$VM_IP/api/v1/"
-echo "    - Swagger: http://$VM_IP/swagger-ui.html"
-echo "    - Health: http://$VM_IP/health"
+echo "    - API: http://$PUBLIC_IP/api/v1/"
+echo "    - Swagger: http://$PUBLIC_IP/swagger-ui.html"
+echo "    - Health: http://$PUBLIC_IP/health"
 echo ""
 
 # Probar endpoints
@@ -192,11 +193,12 @@ else
     echo -e "${YELLOW}⚠ Health check no responde desde localhost (puede tardar un poco más)${NC}"
 fi
 
-echo -e "${GREEN}▶ Probando desde IP $VM_IP...${NC}"
-if curl -s http://$VM_IP/health > /dev/null 2>&1; then
-    echo -e "${GREEN}✓ Health check OK desde IP $VM_IP${NC}"
+echo -e "${GREEN}▶ Probando desde IP pública $PUBLIC_IP...${NC}"
+if curl -s http://$PUBLIC_IP/health > /dev/null 2>&1; then
+    echo -e "${GREEN}✓ Health check OK desde IP $PUBLIC_IP${NC}"
 else
-    echo -e "${YELLOW}⚠ Health check no responde desde IP (verificar Azure NSG)${NC}"
+    echo -e "${YELLOW}⚠ Health check no responde desde IP pública (verificar Azure NSG)${NC}"
+    echo -e "${YELLOW}ℹ La IP pública mostrada es: $PUBLIC_IP${NC}"
 fi
 
 echo ""
