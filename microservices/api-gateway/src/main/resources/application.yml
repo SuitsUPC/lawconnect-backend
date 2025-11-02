@@ -45,5 +45,11 @@ springdoc:
     urls:
       - name: API Gateway
         url: /v3/api-docs
+      - name: IAM Service
+        url: http://iam-service:8081/api-docs
+      - name: Profiles Service
+        url: http://profiles-service:8082/api-docs
+      - name: Cases Service
+        url: http://cases-service:8083/api-docs
     urls-primary-name: API Gateway
 

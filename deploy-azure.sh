@@ -186,21 +186,70 @@ echo ""
 
 # Probar endpoints
 echo "🧪 Probando endpoints..."
-echo -e "${GREEN}▶ Probando health check desde localhost...${NC}"
+
+# Probar puerto 80 (Nginx)
+echo -e "${GREEN}▶ Probando Puerto 80 (Nginx)...${NC}"
 if curl -s http://localhost/health > /dev/null 2>&1; then
-    echo -e "${GREEN}✓ Health check OK desde localhost${NC}"
+    echo -e "${GREEN}✓ Puerto 80 OK desde localhost${NC}"
 else
-    echo -e "${YELLOW}⚠ Health check no responde desde localhost (puede tardar un poco más)${NC}"
+    echo -e "${YELLOW}⚠ Puerto 80 no responde desde localhost${NC}"
 fi
 
-echo -e "${GREEN}▶ Probando desde IP pública $PUBLIC_IP...${NC}"
-if curl -s http://$PUBLIC_IP/health > /dev/null 2>&1; then
-    echo -e "${GREEN}✓ Health check OK desde IP $PUBLIC_IP${NC}"
+# Probar puerto 8080 (API Gateway directo)
+echo -e "${GREEN}▶ Probando Puerto 8080 (API Gateway directo)...${NC}"
+if curl -s http://localhost:8080/api/v1/users > /dev/null 2>&1; then
+    echo -e "${GREEN}✓ Puerto 8080 OK - API Gateway funcionando${NC}"
 else
-    echo -e "${YELLOW}⚠ Health check no responde desde IP pública (verificar Azure NSG)${NC}"
-    echo -e "${YELLOW}ℹ La IP pública mostrada es: $PUBLIC_IP${NC}"
+    echo -e "${YELLOW}⚠ Puerto 8080 no responde desde localhost${NC}"
 fi
 
+# Probar endpoint IAM
+echo -e "${GREEN}▶ Probando Endpoint IAM (/api/v1/users)...${NC}"
+IAM_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/v1/users 2>/dev/null)
+if [ "$IAM_RESPONSE" = "200" ] || [ "$IAM_RESPONSE" = "401" ]; then
+    echo -e "${GREEN}✓ Endpoint IAM OK (HTTP $IAM_RESPONSE)${NC}"
+else
+    echo -e "${YELLOW}⚠ Endpoint IAM no responde (HTTP $IAM_RESPONSE)${NC}"
+fi
+
+# Probar endpoint Profiles  
+echo -e "${GREEN}▶ Probando Endpoint Profiles (/api/v1/lawyers)...${NC}"
+PROFILES_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/v1/lawyers 2>/dev/null)
+if [ "$PROFILES_RESPONSE" = "200" ] || [ "$PROFILES_RESPONSE" = "401" ]; then
+    echo -e "${GREEN}✓ Endpoint Profiles OK (HTTP $PROFILES_RESPONSE)${NC}"
+else
+    echo -e "${YELLOW}⚠ Endpoint Profiles no responde (HTTP $PROFILES_RESPONSE)${NC}"
+fi
+
+# Probar endpoint Cases
+echo -e "${GREEN}▶ Probando Endpoint Cases (/api/v1/cases)...${NC}"
+CASES_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/v1/cases 2>/dev/null)
+if [ "$CASES_RESPONSE" = "200" ] || [ "$CASES_RESPONSE" = "401" ]; then
+    echo -e "${GREEN}✓ Endpoint Cases OK (HTTP $CASES_RESPONSE)${NC}"
+else
+    echo -e "${YELLOW}⚠ Endpoint Cases no responde (HTTP $CASES_RESPONSE)${NC}"
+fi
+
+# Probar Swagger UI
+echo -e "${GREEN}▶ Probando Swagger UI...${NC}"
+SWAGGER_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/swagger-ui.html 2>/dev/null)
+if [ "$SWAGGER_RESPONSE" = "200" ] || [ "$SWAGGER_RESPONSE" = "302" ]; then
+    echo -e "${GREEN}✓ Swagger UI OK (HTTP $SWAGGER_RESPONSE)${NC}"
+else
+    echo -e "${YELLOW}⚠ Swagger UI no responde (HTTP $SWAGGER_RESPONSE)${NC}"
+fi
+
+echo ""
+echo -e "${GREEN}📊 Resumen de pruebas:${NC}"
+echo "  • Puerto 80 (Nginx): http://localhost/"
+echo "  • Puerto 8080 (API Gateway): http://localhost:8080/"
+echo "  • Swagger UI: http://localhost/swagger-ui.html"
+echo "  • Endpoint IAM: http://localhost/api/v1/users"
+echo "  • Endpoint Profiles: http://localhost/api/v1/lawyers"
+echo "  • Endpoint Cases: http://localhost/api/v1/cases"
+echo ""
+echo -e "${GREEN}🌐 URLs desde Internet (después de configurar Azure NSG puerto 80):${NC}"
+echo "  • Swagger UI: http://$PUBLIC_IP/swagger-ui.html"
 echo ""
 echo -e "${YELLOW}ℹ Si hay servicios en 'Restarting', espera 60 segundos más y verifica:${NC}"
 echo -e "${YELLOW}  sudo docker-compose logs -f [nombre-servicio]${NC}"
