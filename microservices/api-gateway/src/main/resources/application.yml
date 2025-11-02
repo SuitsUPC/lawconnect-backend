@@ -11,8 +11,6 @@ spring:
             - Path=/api/v1/authentication/**
             - Path=/api/v1/users/**
             - Path=/api/v1/roles/**
-          filters:
-            - StripPrefix=1
         
         # Profiles Service Routes
         - id: profiles-service
@@ -21,8 +19,6 @@ spring:
             - Path=/api/v1/lawyers/**
             - Path=/api/v1/clients/**
             - Path=/api/v1/lawyer-specialties/**
-          filters:
-            - StripPrefix=1
         
         # Cases Service Routes
         - id: cases-service
@@ -32,8 +28,6 @@ spring:
             - Path=/api/v1/applications/**
             - Path=/api/v1/invitations/**
             - Path=/api/v1/comments/**
-          filters:
-            - StripPrefix=1
 
 server:
   port: 8080

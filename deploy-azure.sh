@@ -213,8 +213,8 @@ else
 fi
 
 # Probar endpoint Profiles  
-echo -e "${GREEN}▶ Probando Endpoint Profiles (/api/v1/lawyers)...${NC}"
-PROFILES_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/v1/lawyers 2>/dev/null)
+echo -e "${GREEN}▶ Probando Endpoint Profiles (/api/v1/lawyer-specialties)...${NC}"
+PROFILES_RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost/api/v1/lawyer-specialties 2>/dev/null)
 if [ "$PROFILES_RESPONSE" = "200" ] || [ "$PROFILES_RESPONSE" = "401" ]; then
     echo -e "${GREEN}✓ Endpoint Profiles OK (HTTP $PROFILES_RESPONSE)${NC}"
 else
@@ -235,7 +235,7 @@ echo -e "${GREEN}📊 Resumen de pruebas de endpoints:${NC}"
 echo "  • Puerto 80 (Nginx): http://localhost/"
 echo "  • Puerto 8080 (API Gateway): http://localhost:8080/"
 echo "  • Endpoint IAM: http://localhost/api/v1/users"
-echo "  • Endpoint Profiles: http://localhost/api/v1/lawyers"
+echo "  • Endpoint Profiles: http://localhost/api/v1/lawyer-specialties"
 echo "  • Endpoint Cases: http://localhost/api/v1/cases"
 echo ""
 echo -e "${GREEN}🌐 URLs desde Internet (después de configurar Azure NSG puerto 80):${NC}"
