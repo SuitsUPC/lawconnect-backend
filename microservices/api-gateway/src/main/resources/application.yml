@@ -28,6 +28,28 @@ spring:
             - Path=/api/v1/applications/**
             - Path=/api/v1/invitations/**
             - Path=/api/v1/comments/**
+        
+        # API Docs Routes for Swagger UI
+        - id: iam-service-docs
+          uri: http://iam-service:8081
+          predicates:
+            - Path=/iam-api-docs/**
+          filters:
+            - StripPrefix=1
+        
+        - id: profiles-service-docs
+          uri: http://profiles-service:8082
+          predicates:
+            - Path=/profiles-api-docs/**
+          filters:
+            - StripPrefix=1
+        
+        - id: cases-service-docs
+          uri: http://cases-service:8083
+          predicates:
+            - Path=/cases-api-docs/**
+          filters:
+            - StripPrefix=1
 
 server:
   port: 8080
@@ -39,5 +61,11 @@ springdoc:
     urls:
       - name: API Gateway
         url: /v3/api-docs
+      - name: IAM Service
+        url: /iam-api-docs/v3/api-docs
+      - name: Profiles Service
+        url: /profiles-api-docs/v3/api-docs
+      - name: Cases Service
+        url: /cases-api-docs/v3/api-docs
     urls-primary-name: API Gateway
 
