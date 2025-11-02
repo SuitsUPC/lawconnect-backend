@@ -91,8 +91,8 @@ cd $PROJECT_ROOT/microservices
 sudo docker-compose up -d --build
 
 # Esperar a que servicios inicien
-echo -e "${GREEN}▶ Esperando que servicios inicien (30 segundos)...${NC}"
-sleep 30
+echo -e "${GREEN}▶ Esperando que servicios inicien (15 segundos)...${NC}"
+sleep 15
 
 # Paso 10: Verificar estado
 echo -e "${GREEN}▶ Verificando estado de servicios...${NC}"
@@ -109,13 +109,13 @@ fi
 # Mostrar logs recientes
 echo -e "${GREEN}▶ Mostrando últimas líneas de logs de cada servicio...${NC}"
 echo -e "${YELLOW}━━━━ IAM Service ━━━━${NC}"
-sudo docker-compose logs iam-service --tail=10
+sudo docker-compose logs iam-service | tail -10
 echo -e "${YELLOW}━━━━ Profiles Service ━━━━${NC}"
-sudo docker-compose logs profiles-service --tail=10
+sudo docker-compose logs profiles-service | tail -10
 echo -e "${YELLOW}━━━━ Cases Service ━━━━${NC}"
-sudo docker-compose logs cases-service --tail=10
+sudo docker-compose logs cases-service | tail -10
 echo -e "${YELLOW}━━━━ API Gateway ━━━━${NC}"
-sudo docker-compose logs api-gateway --tail=10
+sudo docker-compose logs api-gateway | tail -10
 
 # Paso 11: Configurar inicio automático
 echo -e "${GREEN}▶ Configurando inicio automático...${NC}"

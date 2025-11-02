@@ -1,39 +1,14 @@
 # 🚀 Despliegue LawConnect en Azure VM
 
-## ✅ Listo: Todo configurado
-
-Solo ejecuta esto en tu VM:
+## ✅ Despliegue automático (RECOMENDADO)
 
 ```bash
+# Desde la raíz del proyecto
 cd ~/lawconnect-backend
-git pull
-
-# Detener servicios actuales
-cd microservices
-sudo docker-compose down
-
-# Reconstruir JARs correctamente  
-cd ~/lawconnect-backend/microservices/iam
-mvn clean package spring-boot:repackage -DskipTests
-
-cd ../profiles
-mvn clean package spring-boot:repackage -DskipTests
-
-cd ../cases
-mvn clean package spring-boot:repackage -DskipTests
-
-cd ../api-gateway
-mvn clean package spring-boot:repackage -DskipTests
-
-cd ..
-
-# Levantar servicios
-sudo docker-compose up -d --build
-
-# Esperar y verificar
-sleep 60
-sudo docker-compose ps
+bash deploy-azure.sh
 ```
+
+**¡Eso es todo!** El script hace todo automáticamente.
 
 ## 🎯 ¿Las bases de datos?
 
@@ -41,10 +16,11 @@ sudo docker-compose ps
 - MySQL crea las databases: `iam-db`, `profiles-db`, `cases-db` 
 - Hibernate crea las tablas: `spring.jpa.hibernate.ddl-auto=update`
 
-## ✅ Verificar
+## ✅ Verificar después del despliegue
 
 ```bash
 # Estado de servicios
+cd ~/lawconnect-backend/microservices
 sudo docker-compose ps
 
 # Logs
@@ -72,4 +48,4 @@ sudo docker-compose logs | grep -i error
 
 ---
 
-**Después de ejecutar los comandos, espera 60 segundos y verifica con `sudo docker-compose ps`**
+**Después de ejecutar el script, espera 60 segundos y verifica con `sudo docker-compose ps`**
