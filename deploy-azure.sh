@@ -67,19 +67,19 @@ sudo systemctl enable nginx
 
 # Paso 8: Verificar que los JARs existen
 echo -e "${GREEN}▶ Verificando que los JARs se construyeron...${NC}"
-if [ ! -f microservices/iam/target/iam-service-0.0.1-SNAPSHOT.jar ]; then
+if [ ! -f $PROJECT_ROOT/microservices/iam/target/iam-service-0.0.1-SNAPSHOT.jar ]; then
     echo -e "${RED}✖ Error: No se encontró iam-service-0.0.1-SNAPSHOT.jar${NC}"
     exit 1
 fi
-if [ ! -f microservices/profiles/target/profiles-service-0.0.1-SNAPSHOT.jar ]; then
+if [ ! -f $PROJECT_ROOT/microservices/profiles/target/profiles-service-0.0.1-SNAPSHOT.jar ]; then
     echo -e "${RED}✖ Error: No se encontró profiles-service-0.0.1-SNAPSHOT.jar${NC}"
     exit 1
 fi
-if [ ! -f microservices/cases/target/cases-service-0.0.1-SNAPSHOT.jar ]; then
+if [ ! -f $PROJECT_ROOT/microservices/cases/target/cases-service-0.0.1-SNAPSHOT.jar ]; then
     echo -e "${RED}✖ Error: No se encontró cases-service-0.0.1-SNAPSHOT.jar${NC}"
     exit 1
 fi
-if [ ! -f microservices/api-gateway/target/api-gateway-0.0.1-SNAPSHOT.jar ]; then
+if [ ! -f $PROJECT_ROOT/microservices/api-gateway/target/api-gateway-0.0.1-SNAPSHOT.jar ]; then
     echo -e "${RED}✖ Error: No se encontró api-gateway-0.0.1-SNAPSHOT.jar${NC}"
     exit 1
 fi
