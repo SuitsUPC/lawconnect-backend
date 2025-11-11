@@ -29,7 +29,7 @@ import java.util.UUID;
 @Entity
 @NoArgsConstructor
 @Table(name = "applications")
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = "legalCase")
 public class Application extends AuditableModel {
 
     /**
@@ -58,10 +58,17 @@ public class Application extends AuditableModel {
     @Enumerated(EnumType.STRING)
     private ApplicationStatus status;
 
-    public Application(CaseAggregate legalCase, UUID lawyerId, ApplicationStatus status) {
+    /**
+     * The message or cover letter submitted by the lawyer with the application.
+     */
+    @Column(name = "message", length = 1000)
+    private String message;
+
+    public Application(CaseAggregate legalCase, UUID lawyerId, ApplicationStatus status, String message) {
         this.legalCase = legalCase;
         this.lawyerId = lawyerId;
         this.status = status;
+        this.message = message;
     }
 
     /**
@@ -83,14 +90,15 @@ public class Application extends AuditableModel {
     }
 
     /**
-     * Creates a new Application instance with the specified case, lawyer ID, and status.
+     * Creates a new Application instance with the specified case, lawyer ID, status, and message.
      *
      * @param legalCase the case associated with the application
      * @param lawyerId  the unique identifier of the lawyer
      * @param status    the status of the application
+     * @param message   the cover letter or message from the lawyer
      * @return a new Application instance
      */
-    public static Application create(CaseAggregate legalCase, UUID lawyerId, ApplicationStatus status) {
-        return new Application(legalCase, lawyerId, status);
+    public static Application create(CaseAggregate legalCase, UUID lawyerId, ApplicationStatus status, String message) {
+        return new Application(legalCase, lawyerId, status, message);
     }
 }

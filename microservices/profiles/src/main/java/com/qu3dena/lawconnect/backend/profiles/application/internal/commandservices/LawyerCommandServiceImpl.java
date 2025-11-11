@@ -2,6 +2,7 @@ package com.qu3dena.lawconnect.backend.profiles.application.internal.commandserv
 
 import com.qu3dena.lawconnect.backend.profiles.domain.model.aggregates.LawyerAggregate;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.commands.CreateLawyerCommand;
+import com.qu3dena.lawconnect.backend.profiles.domain.model.commands.UpdateLawyerSpecialtiesCommand;
 import com.qu3dena.lawconnect.backend.shared.domain.model.valueobjects.Description;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.valueobjects.Dni;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.valueobjects.FullName;
@@ -12,6 +13,7 @@ import com.qu3dena.lawconnect.backend.profiles.infrastructure.persistence.jpa.re
 import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
+import java.util.HashSet;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -72,5 +74,38 @@ public class LawyerCommandServiceImpl implements LawyerCommandService {
         var saved = lawyerRepository.save(lawyer);
 
         return Optional.of(saved);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Optional<LawyerAggregate> handle(UpdateLawyerSpecialtiesCommand command) {
+        var lawyer = lawyerRepository.findByUserId(command.userId());
+
+        if (lawyer.isEmpty())
+            throw new IllegalArgumentException("Lawyer profile not found for user ID: " + command.userId());
+
+        var lawyerEntity = lawyer.get();
+
+        // Convert specialty names to specialty entities
+        var specialties = command.specialtyNames().stream()
+                .map(specialtyName -> {
+                    try {
+                        var specialtyEnum = LawyerSpecialties.valueOf(specialtyName);
+                        return lawyerSpecialtyRepository.findByName(specialtyEnum)
+                                .orElseThrow(() -> new IllegalArgumentException("Specialty not found: " + specialtyName));
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException("Invalid specialty name: " + specialtyName);
+                    }
+                })
+                .collect(Collectors.toSet());
+
+        // Update lawyer's specialties
+        lawyerEntity.setSpecialties(new HashSet<>(specialties));
+
+        var updated = lawyerRepository.save(lawyerEntity);
+
+        return Optional.of(updated);
     }
 }

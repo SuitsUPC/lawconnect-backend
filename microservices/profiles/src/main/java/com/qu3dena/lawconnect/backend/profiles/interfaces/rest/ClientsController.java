@@ -1,5 +1,6 @@
 package com.qu3dena.lawconnect.backend.profiles.interfaces.rest;
 
+import com.qu3dena.lawconnect.backend.profiles.domain.model.queries.GetAllClientsQuery;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.queries.GetClientByUserIdQuery;
 import com.qu3dena.lawconnect.backend.profiles.domain.services.ClientCommandService;
 import com.qu3dena.lawconnect.backend.profiles.domain.services.ClientQueryService;
@@ -16,7 +17,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/api/v1/clients", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -50,6 +53,22 @@ public class ClientsController {
         var clientResource = ClientResourceFromEntityAssembler.toResourceFromEntity(client.get());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(clientResource);
+    }
+
+    @GetMapping
+    @Operation(summary = "Get all clients", description = "Get all client profiles")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Clients retrieved successfully")
+    })
+    public ResponseEntity<List<ClientResource>> getAllClients() {
+        var query = new GetAllClientsQuery();
+        var clients = queryService.handle(query);
+
+        var clientResources = clients.stream()
+                .map(ClientResourceFromEntityAssembler::toResourceFromEntity)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(clientResources);
     }
 
     @GetMapping("{userId}")

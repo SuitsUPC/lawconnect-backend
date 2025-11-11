@@ -6,44 +6,94 @@ spring:
       routes:
         # IAM Service Routes
         - id: iam-service
-          uri: http://localhost:8081
+          uri: http://iam-service:8081
           predicates:
-            - Path=/api/v1/authentication/**
-            - Path=/api/v1/users/**
-            - Path=/api/v1/roles/**
+            - Path=/api/v1/authentication/**,/api/v1/users/**,/api/v1/roles/**
+        
+        # IAM Service Swagger UI
+        - id: iam-swagger-ui
+          uri: http://iam-service:8081
+          predicates:
+            - Path=/iam/swagger-ui.html
           filters:
-            - StripPrefix=1
+            - RewritePath=/iam/swagger-ui.html, /swagger-ui.html
+        
+        - id: iam-swagger-resources
+          uri: http://iam-service:8081
+          predicates:
+            - Path=/iam/swagger-ui/**
+          filters:
+            - RewritePath=/iam/(?<segment>.*), /$\{segment}
+        
+        - id: iam-api-docs
+          uri: http://iam-service:8081
+          predicates:
+            - Path=/iam/v3/api-docs/**
+          filters:
+            - RewritePath=/iam/(?<segment>.*), /$\{segment}
         
         # Profiles Service Routes
         - id: profiles-service
-          uri: http://localhost:8082
+          uri: http://profiles-service:8082
           predicates:
-            - Path=/api/v1/lawyers/**
-            - Path=/api/v1/clients/**
-            - Path=/api/v1/lawyer-specialties/**
+            - Path=/api/v1/lawyers/**,/api/v1/clients/**,/api/v1/lawyer-specialties/**
+        
+        # Profiles Service Swagger UI
+        - id: profiles-swagger-ui
+          uri: http://profiles-service:8082
+          predicates:
+            - Path=/profiles/swagger-ui.html
           filters:
-            - StripPrefix=1
+            - RewritePath=/profiles/swagger-ui.html, /swagger-ui.html
+        
+        - id: profiles-swagger-resources
+          uri: http://profiles-service:8082
+          predicates:
+            - Path=/profiles/swagger-ui/**
+          filters:
+            - RewritePath=/profiles/(?<segment>.*), /$\{segment}
+        
+        - id: profiles-api-docs
+          uri: http://profiles-service:8082
+          predicates:
+            - Path=/profiles/v3/api-docs/**
+          filters:
+            - RewritePath=/profiles/(?<segment>.*), /$\{segment}
         
         # Cases Service Routes
         - id: cases-service
-          uri: http://localhost:8083
+          uri: http://cases-service:8083
           predicates:
-            - Path=/api/v1/cases/**
-            - Path=/api/v1/applications/**
-            - Path=/api/v1/invitations/**
-            - Path=/api/v1/comments/**
+            - Path=/api/v1/cases/**,/api/v1/applications/**,/api/v1/invitations/**,/api/v1/comments/**
+        
+        # Cases Service Swagger UI
+        - id: cases-swagger-ui
+          uri: http://cases-service:8083
+          predicates:
+            - Path=/cases/swagger-ui.html
           filters:
-            - StripPrefix=1
+            - RewritePath=/cases/swagger-ui.html, /swagger-ui.html
+        
+        - id: cases-swagger-resources
+          uri: http://cases-service:8083
+          predicates:
+            - Path=/cases/swagger-ui/**
+          filters:
+            - RewritePath=/cases/(?<segment>.*), /$\{segment}
+        
+        - id: cases-api-docs
+          uri: http://cases-service:8083
+          predicates:
+            - Path=/cases/v3/api-docs/**
+          filters:
+            - RewritePath=/cases/(?<segment>.*), /$\{segment}
 
 server:
   port: 8080
 
-# OpenAPI Documentation for API Gateway
-springdoc:
-  swagger-ui:
-    path: /swagger-ui.html
-    urls:
-      - name: API Gateway
-        url: /v3/api-docs
-    urls-primary-name: API Gateway
+# Swagger UI deshabilitado en el Gateway
+# Accede directamente a cada servicio:
+# - IAM: http://localhost:8080/iam/swagger-ui.html
+# - Profiles: http://localhost:8080/profiles/swagger-ui.html
+# - Cases: http://localhost:8080/cases/swagger-ui.html
 

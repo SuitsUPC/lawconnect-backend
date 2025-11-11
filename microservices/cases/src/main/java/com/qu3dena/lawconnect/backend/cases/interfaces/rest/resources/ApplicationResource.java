@@ -7,7 +7,7 @@ import java.util.UUID;
 /**
  * Resource representation of an application.
  * Encapsulates the details of an application, including its ID, associated case ID,
- * lawyer ID, and current status.
+ * lawyer ID, message, and current status.
  *
  * @author LawConnect Team
  * @since 1.0
@@ -16,5 +16,6 @@ public record ApplicationResource(
         Long id,
         UUID caseId,
         UUID lawyerId,
+        String message,
         ApplicationStatus status
 ) { }

@@ -1,12 +1,15 @@
 package com.qu3dena.lawconnect.backend.profiles.interfaces.rest;
 
+import com.qu3dena.lawconnect.backend.profiles.domain.model.queries.GetAllLawyersQuery;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.queries.GetLawyerByUserIdQuery;
 import com.qu3dena.lawconnect.backend.profiles.domain.services.LawyerCommandService;
 import com.qu3dena.lawconnect.backend.profiles.domain.services.LawyerQueryService;
 import com.qu3dena.lawconnect.backend.profiles.interfaces.rest.resources.CreateLawyerResource;
 import com.qu3dena.lawconnect.backend.profiles.interfaces.rest.resources.LawyerResource;
+import com.qu3dena.lawconnect.backend.profiles.interfaces.rest.resources.UpdateLawyerSpecialtiesResource;
 import com.qu3dena.lawconnect.backend.profiles.interfaces.rest.transform.CreateLawyerCommandFromResourceAssembler;
 import com.qu3dena.lawconnect.backend.profiles.interfaces.rest.transform.LawyerResourceFromEntityAssembler;
+import com.qu3dena.lawconnect.backend.profiles.interfaces.rest.transform.UpdateLawyerSpecialtiesCommandFromResourceAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -16,7 +19,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping(value = "/api/v1/lawyers", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -52,6 +57,22 @@ public class LawyersController {
         return ResponseEntity.status(HttpStatus.CREATED).body(lawyerResource);
     }
 
+    @GetMapping
+    @Operation(summary = "Get all lawyers", description = "Get all lawyer profiles")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lawyers retrieved successfully")
+    })
+    public ResponseEntity<List<LawyerResource>> getAllLawyers() {
+        var query = new GetAllLawyersQuery();
+        var lawyers = queryService.handle(query);
+
+        var lawyerResources = lawyers.stream()
+                .map(LawyerResourceFromEntityAssembler::toResourceFromEntity)
+                .collect(Collectors.toList());
+
+        return ResponseEntity.ok(lawyerResources);
+    }
+
     @GetMapping("{userId}")
     @Operation(summary = "Get lawyer profile by User ID", description = "Get lawyer profile by User ID")
     @ApiResponses(value = {
@@ -69,5 +90,29 @@ public class LawyersController {
 
         var resource = LawyerResourceFromEntityAssembler.toResourceFromEntity(maybeItem.get());
         return ResponseEntity.ok(resource);
+    }
+
+    @PutMapping("{userId}/specialties")
+    @Operation(summary = "Update lawyer specialties", description = "Update the specialties for a lawyer profile")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Specialties updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Lawyer profile not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid specialty names")
+    })
+    public ResponseEntity<LawyerResource> updateLawyerSpecialties(
+            @PathVariable String userId,
+            @RequestBody UpdateLawyerSpecialtiesResource resource
+    ) {
+        var command = UpdateLawyerSpecialtiesCommandFromResourceAssembler.toCommandFromResource(
+                UUID.fromString(userId), resource
+        );
+
+        var lawyer = commandService.handle(command);
+
+        if (lawyer.isEmpty())
+            return ResponseEntity.notFound().build();
+
+        var lawyerResource = LawyerResourceFromEntityAssembler.toResourceFromEntity(lawyer.get());
+        return ResponseEntity.ok(lawyerResource);
     }
 }

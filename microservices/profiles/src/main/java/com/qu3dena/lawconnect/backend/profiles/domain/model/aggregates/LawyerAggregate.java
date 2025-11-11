@@ -35,7 +35,7 @@ public class LawyerAggregate extends ProfileAggregate {
     /**
      * The set of specialties associated with the lawyer.
      */
-    @ManyToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL)
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE, CascadeType.REFRESH})
     @JoinTable(
             name = "lawyer_profile_specialties",
             joinColumns = @JoinColumn(name = "lawyer_profile_id"),

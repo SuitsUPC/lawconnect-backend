@@ -7,7 +7,8 @@ public class SubmitApplicationCommandFromResourceAssembler {
     public static SubmitApplicationCommand toCommandFromResource(SubmitApplicationResource resource) {
         return new SubmitApplicationCommand(
                 resource.caseId(),
-                resource.lawyerId()
+                resource.lawyerId(),
+                resource.message()
         );
     }
 }

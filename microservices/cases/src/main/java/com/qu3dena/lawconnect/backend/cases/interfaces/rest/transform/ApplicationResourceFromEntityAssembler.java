@@ -10,6 +10,7 @@ public class ApplicationResourceFromEntityAssembler {
                 entity.getId(),
                 entity.getLegalCase().getId(),
                 entity.getLawyerId(),
+                entity.getMessage(),
                 entity.getStatus()
         );
     }

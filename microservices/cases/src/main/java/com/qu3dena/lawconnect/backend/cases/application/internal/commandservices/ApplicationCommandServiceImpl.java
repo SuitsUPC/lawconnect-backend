@@ -109,7 +109,7 @@ public class ApplicationCommandServiceImpl implements ApplicationCommandService 
         caseRepository.save(maybeCase);
 
         // 4). Create a new application, save it, and return the saved instance
-        var application = Application.create(maybeCase, command.lawyerId(), ApplicationStatus.SUBMITTED);
+        var application = Application.create(maybeCase, command.lawyerId(), ApplicationStatus.SUBMITTED, command.message());
         var saved = applicationRepository.save(application);
 
         // 5). Publish an event indicating that the application has been submitted

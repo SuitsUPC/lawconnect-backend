@@ -58,13 +58,18 @@ public class Role {
 
     /**
      * Creates a role from the given string name.
+     * <p>
+     * Accepts role names with or without the "ROLE_" prefix.
+     * For example, both "LAWYER" and "ROLE_LAWYER" are valid.
      *
      * @param name the name of the role as a string
      * @return the corresponding {@code Role} instance
      * @throws IllegalArgumentException if the name does not match any role
      */
     public static Role toRoleFromName(String name) {
-        return new Role(Roles.valueOf(name));
+        // Add ROLE_ prefix if not present
+        String roleName = name.startsWith("ROLE_") ? name : "ROLE_" + name;
+        return new Role(Roles.valueOf(roleName));
     }
 
     /**
@@ -89,12 +94,17 @@ public class Role {
 
     /**
      * Creates a role from the given string name.
+     * <p>
+     * Accepts role names with or without the "ROLE_" prefix.
+     * For example, both "LAWYER" and "ROLE_LAWYER" are valid.
      *
      * @param name the name of the role as a string
      * @return the corresponding {@code Role} instance
      * @throws IllegalArgumentException if the name does not match any role
      */
     public static Role create(String name) {
-        return new Role(Roles.valueOf(name));
+        // Add ROLE_ prefix if not present
+        String roleName = name.startsWith("ROLE_") ? name : "ROLE_" + name;
+        return new Role(Roles.valueOf(roleName));
     }
 }

@@ -10,5 +10,5 @@ import java.util.UUID;
  * @since 1.0
  * @author LawConnect Team
  */
-public record SubmitApplicationCommand(UUID caseId, UUID lawyerId) {
+public record SubmitApplicationCommand(UUID caseId, UUID lawyerId, String message) {
 }

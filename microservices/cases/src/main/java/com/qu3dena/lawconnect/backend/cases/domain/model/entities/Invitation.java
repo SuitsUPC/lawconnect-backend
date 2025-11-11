@@ -29,7 +29,7 @@ import java.util.UUID;
 @Entity
 @NoArgsConstructor
 @Table(name = "invitations")
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = "legalCase")
 public class Invitation extends AuditableModel {
 
     /**

@@ -30,7 +30,7 @@ import java.util.UUID;
 @Entity
 @NoArgsConstructor
 @Table(name = "comments")
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = "legalCase")
 public class Comment extends AuditableModel {
 
     @Id

@@ -1,7 +1,7 @@
 package com.qu3dena.lawconnect.backend.iam.interfaces.rest.transform;
 
 import com.qu3dena.lawconnect.backend.iam.domain.model.commands.SignUpCommand;
-import com.qu3dena.lawconnect.backend.iam.domain.model.entities.Role;
+import com.qu3dena.lawconnect.backend.iam.domain.model.valueobjects.Roles;
 import com.qu3dena.lawconnect.backend.iam.interfaces.rest.resources.SignUpResource;
 
 /**
@@ -22,14 +22,14 @@ public class SignUpCommandFromResourceAssembler {
      * @return a new {@link SignUpCommand} constructed from the provided resource
      */
     public static SignUpCommand toCommandFromResource(SignUpResource resource) {
-        var roleEntity = Role.toRoleFromName(resource.role());
-
-        System.out.println("Role Entity: " + roleEntity);
+        // Convert role string to enum, adding ROLE_ prefix if not present
+        String roleName = resource.role().startsWith("ROLE_") ? resource.role() : "ROLE_" + resource.role();
+        var roleEnum = Roles.valueOf(roleName);
 
         return new SignUpCommand(
                 resource.username(),
                 resource.password(),
-                roleEntity
+                roleEnum
         );
     }
 }

@@ -3,6 +3,8 @@ package com.qu3dena.lawconnect.backend.iam.interfaces.rest.transform;
 import com.qu3dena.lawconnect.backend.iam.domain.model.aggregates.UserAggregate;
 import com.qu3dena.lawconnect.backend.iam.interfaces.rest.resources.AuthenticatedUserResource;
 
+import java.util.List;
+
 /**
  * Assembler class for converting {@link UserAggregate} entities and JWT tokens
  * into {@link AuthenticatedUserResource} objects.
@@ -24,9 +26,12 @@ public class AuthenticatedUserResourceFromEntityAssembler {
      * @return the corresponding {@link AuthenticatedUserResource}
      */
     public static AuthenticatedUserResource toResourceFromEntity(UserAggregate entity, String token) {
+        var roles = List.of(entity.getRole().getStringName());
+        
         return new AuthenticatedUserResource(
                 entity.getId(),
                 entity.getUsername(),
+                roles,
                 token
         );
     }

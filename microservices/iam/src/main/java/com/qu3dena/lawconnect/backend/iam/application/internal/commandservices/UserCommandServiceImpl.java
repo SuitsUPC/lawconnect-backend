@@ -64,8 +64,8 @@ public class UserCommandServiceImpl implements UserCommandService {
 
         var encoded = hashingService.encode(command.password());
 
-        var roleEntity = roleRepository.findByName(command.role().getName())
-                .orElseThrow(() -> new RuntimeException("Role not found"));
+        var roleEntity = roleRepository.findByName(command.role())
+                .orElseThrow(() -> new RuntimeException("Role not found: " + command.role()));
 
         var user = UserAggregate.create(command.username(), encoded, roleEntity);
 

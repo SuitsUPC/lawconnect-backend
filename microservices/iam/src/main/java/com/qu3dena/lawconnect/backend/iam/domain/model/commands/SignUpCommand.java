@@ -1,6 +1,6 @@
 package com.qu3dena.lawconnect.backend.iam.domain.model.commands;
 
-import com.qu3dena.lawconnect.backend.iam.domain.model.entities.Role;
+import com.qu3dena.lawconnect.backend.iam.domain.model.valueobjects.Roles;
 
 /**
  * Command representing a user sign-up request.
@@ -14,6 +14,6 @@ import com.qu3dena.lawconnect.backend.iam.domain.model.entities.Role;
 public record SignUpCommand(
         String username,
         String password,
-        Role role
+        Roles role
 ) {
 }

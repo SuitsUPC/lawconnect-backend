@@ -71,11 +71,12 @@ Antes de clonar y ejecutar este proyecto, asegúrate de tener instalado:
    docker compose -f microservices/docker-compose.yml ps
    ```
 
-5. **Accede a Swagger UI**:
-   - **API Gateway (punto de entrada principal)**: http://localhost:8080/swagger-ui.html
-   - IAM Service: http://localhost:8081/swagger-ui.html
-   - Profiles Service: http://localhost:8082/swagger-ui.html
-   - Cases Service: http://localhost:8083/swagger-ui.html
+5. **Accede a la aplicación**:
+   - **Página de inicio**: http://localhost:8080
+   - **Swagger UI de cada microservicio**:
+     - IAM Service: http://localhost:8081/swagger-ui.html
+     - Profiles Service: http://localhost:8082/swagger-ui.html
+     - Cases Service: http://localhost:8083/swagger-ui.html
 
 ## 🎯 Bounded Contexts
 
@@ -199,9 +200,14 @@ cd microservices/[servicio]
 3. Asegúrate de que los JARs estén correctamente empaquetados
 
 ### No puedo acceder a Swagger
-1. Verifica que el servicio esté corriendo: `docker compose -f microservices/docker-compose.yml ps`
-2. Prueba la URL alternativa sin `.html`: http://localhost:8080/swagger-ui/
-3. Revisa los logs del servicio para ver si hay errores
+1. Verifica que los servicios estén corriendo: `docker compose -f microservices/docker-compose.yml ps`
+2. Accede primero a la página de inicio: http://localhost:8080
+3. Desde ahí, haz clic en el microservicio que deseas explorar
+4. También puedes acceder directamente a cada servicio:
+   - IAM: http://localhost:8081/swagger-ui.html
+   - Profiles: http://localhost:8082/swagger-ui.html
+   - Cases: http://localhost:8083/swagger-ui.html
+5. Revisa los logs si hay problemas: `docker compose -f microservices/docker-compose.yml logs [servicio]`
 
 ## 🔧 Tecnologías
 
@@ -280,5 +286,7 @@ Si tienes problemas al configurar el proyecto:
 **¡Listo para empezar!** 🎉
 
 Una vez que hayas seguido los pasos de instalación, tu backend estará corriendo en:
-- **API Gateway**: http://localhost:8080
-- **Swagger UI**: http://localhost:8080/swagger-ui.html
+- **Página de Inicio**: http://localhost:8080
+- **IAM Service**: http://localhost:8081/swagger-ui.html
+- **Profiles Service**: http://localhost:8082/swagger-ui.html
+- **Cases Service**: http://localhost:8083/swagger-ui.html

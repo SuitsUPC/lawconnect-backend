@@ -1,6 +1,7 @@
 package com.qu3dena.lawconnect.backend.profiles.application.internal.queryservices;
 
 import com.qu3dena.lawconnect.backend.profiles.domain.model.aggregates.LawyerAggregate;
+import com.qu3dena.lawconnect.backend.profiles.domain.model.queries.GetAllLawyersQuery;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.queries.GetLawyerByUserIdQuery;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.queries.GetLawyerBySpecialtyQuery;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.valueobjects.LawyerSpecialties;
@@ -8,6 +9,7 @@ import com.qu3dena.lawconnect.backend.profiles.domain.services.LawyerQueryServic
 import com.qu3dena.lawconnect.backend.profiles.infrastructure.persistence.jpa.repositories.LawyerRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -32,6 +34,14 @@ public class LawyerQueryServiceImpl implements LawyerQueryService {
      */
     public LawyerQueryServiceImpl(LawyerRepository lawyerRepository) {
         this.lawyerRepository = lawyerRepository;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<LawyerAggregate> handle(GetAllLawyersQuery query) {
+        return lawyerRepository.findAll();
     }
 
     /**

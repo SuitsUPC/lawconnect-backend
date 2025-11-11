@@ -30,7 +30,7 @@ import java.time.Instant;
 @Entity
 @NoArgsConstructor
 @Table(name = "case_states")
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = "legalCase")
 public class CaseState extends AuditableModel {
 
     /**
