@@ -54,7 +54,8 @@ public class CaseCommandServiceImpl implements CaseCommandService {
         var newCase = CaseAggregate.create(
                 command.clientId(),
                 command.title(),
-                command.description()
+                command.description(),
+                command.specialtyId()
         );
 
         // 2). Save the new case to the repository

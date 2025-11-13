@@ -12,6 +12,7 @@ public class CaseResourceFromEntityAssembler {
                 entity.getDescription().text(),
                 entity.getClientId(),
                 entity.getAssignedLawyerId(),
+                entity.getSpecialtyId(),
                 entity.getStatus(),
                 entity.getCreatedAt().toInstant(),
                 entity.getUpdatedAt().toInstant()

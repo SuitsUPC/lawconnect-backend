@@ -8,13 +8,14 @@ import java.util.UUID;
 /**
  * Resource representation of a legal case.
  * Encapsulates the details of a case, including its ID, title, description,
- * client ID, assigned lawyer ID, status, and timestamps for creation and last update.
+ * client ID, assigned lawyer ID, specialty ID, status, and timestamps for creation and last update.
  *
  * @param id               the unique identifier of the case
  * @param title            the title of the case
  * @param description      the description of the case
  * @param clientId         the unique identifier of the client associated with the case
  * @param assignedLawyerId the unique identifier of the lawyer assigned to the case (nullable)
+ * @param specialtyId      the ID of the legal specialty required for this case (nullable)
  * @param status           the current status of the case
  * @param createdAt        the timestamp when the case was created
  * @param updatedAt        the timestamp when the case was last updated
@@ -28,6 +29,7 @@ public record CaseResource(
         String description,
         UUID clientId,
         UUID assignedLawyerId,
+        Long specialtyId,
         CaseStatus status,
         Instant createdAt,
         Instant updatedAt

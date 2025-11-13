@@ -60,6 +60,12 @@ public class CaseAggregate extends AuditableAbstractAggregateRoot<CaseAggregate>
     private UUID assignedLawyerId;
 
     /**
+     * The ID of the legal specialty required for this case.
+     */
+    @Column(name = "specialty_id")
+    private Long specialtyId;
+
+    /**
      * The set of invitations associated with the case.
      */
     @OneToMany(mappedBy = "legalCase", cascade = CascadeType.ALL)
@@ -91,16 +97,18 @@ public class CaseAggregate extends AuditableAbstractAggregateRoot<CaseAggregate>
     private CaseStatus currentStatus;
 
     /**
-     * Constructs a new CaseAggregate with the specified client ID, title, and description.
+     * Constructs a new CaseAggregate with the specified client ID, title, description, and specialty ID.
      *
      * @param clientId    the unique identifier of the client
      * @param title       the title of the case
      * @param description the description of the case
+     * @param specialtyId the ID of the legal specialty required for this case (nullable)
      */
-    public CaseAggregate(UUID clientId, CaseTitle title, Description description) {
+    public CaseAggregate(UUID clientId, CaseTitle title, Description description, Long specialtyId) {
         this.clientId = clientId;
         this.title = title;
         this.description = description;
+        this.specialtyId = specialtyId;
         this.currentStatus = CaseStatus.OPEN;
     }
 
@@ -110,10 +118,11 @@ public class CaseAggregate extends AuditableAbstractAggregateRoot<CaseAggregate>
      * @param clientId    the unique identifier of the client
      * @param title       the title of the case
      * @param description the description of the case
+     * @param specialtyId the ID of the legal specialty required for this case (nullable)
      * @return the newly created CaseAggregate
      */
-    public static CaseAggregate create(UUID clientId, CaseTitle title, Description description) {
-        var case_ = new CaseAggregate(clientId, title, description);
+    public static CaseAggregate create(UUID clientId, CaseTitle title, Description description, Long specialtyId) {
+        var case_ = new CaseAggregate(clientId, title, description, specialtyId);
         case_.states.add(new CaseState(case_, CaseStatus.OPEN));
         return case_;
     }

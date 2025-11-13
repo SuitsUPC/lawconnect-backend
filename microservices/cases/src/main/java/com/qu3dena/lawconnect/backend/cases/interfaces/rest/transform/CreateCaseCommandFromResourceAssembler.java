@@ -10,7 +10,8 @@ public class CreateCaseCommandFromResourceAssembler {
         return new CreateCaseCommand(
                 resource.clientId(),
                 new CaseTitle(resource.title()),
-                new Description(resource.description())
+                new Description(resource.description()),
+                resource.specialtyId()
         );
     }
 }

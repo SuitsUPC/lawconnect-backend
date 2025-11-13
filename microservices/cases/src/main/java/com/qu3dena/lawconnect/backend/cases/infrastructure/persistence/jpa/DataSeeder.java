@@ -137,7 +137,8 @@ public class DataSeeder {
             CaseAggregate case11 = CaseAggregate.create(
                     juanPerezId,
                     new CaseTitle("Divorcio Contencioso"),
-                    new Description("Necesito asesoría legal para divorcio contencioso con bienes compartidos.")
+                    new Description("Necesito asesoría legal para divorcio contencioso con bienes compartidos."),
+                    null // specialtyId - TODO: obtener del servicio de perfiles
             );
             case11.evaluation();
             case11.accept(anaTorresId); // Ana Torres - Family Law
@@ -148,7 +149,8 @@ public class DataSeeder {
             CaseAggregate case12 = CaseAggregate.create(
                     juanPerezId,
                     new CaseTitle("Despido Laboral Injustificado"),
-                    new Description("Fui despedido sin causa después de 5 años. Necesito demandar.")
+                    new Description("Fui despedido sin causa después de 5 años. Necesito demandar."),
+                    null // specialtyId
             );
             Application app12 = Application.create(case12, luciaGarciaId, ApplicationStatus.SUBMITTED, "Estimado cliente, cuento con 10 años de experiencia en derecho laboral y me gustaría representarlo en este caso.");
             case12.getApplications().add(app12);
@@ -157,7 +159,8 @@ public class DataSeeder {
             CaseAggregate case13 = CaseAggregate.create(
                     juanPerezId,
                     new CaseTitle("Accidente de Tránsito con Lesiones"),
-                    new Description("Accidente vehicular grave por negligencia del otro conductor.")
+                    new Description("Accidente vehicular grave por negligencia del otro conductor."),
+                    null // specialtyId
             );
             case13.evaluation();
             case13.accept(mariaRodriguezId); // María - Criminal/Personal Injury
@@ -168,7 +171,8 @@ public class DataSeeder {
             CaseAggregate case21 = CaseAggregate.create(
                     sofiaMartinezId,
                     new CaseTitle("Constitución de Empresa SRL"),
-                    new Description("3 socios queremos constituir una SRL para nuestro negocio tecnológico.")
+                    new Description("3 socios queremos constituir una SRL para nuestro negocio tecnológico."),
+                    null // specialtyId
             );
             case21.evaluation();
             case21.accept(carlosMendezId); // Carlos - Corporate
@@ -179,7 +183,8 @@ public class DataSeeder {
             CaseAggregate case22 = CaseAggregate.create(
                     sofiaMartinezId,
                     new CaseTitle("Compra de Departamento"),
-                    new Description("Necesito revisión de contrato de compra-venta antes de firmar.")
+                    new Description("Necesito revisión de contrato de compra-venta antes de firmar."),
+                    null // specialtyId
             );
             case22.evaluation();
             case22.accept(pedroSanchezId); // Pedro - Real Estate
@@ -188,7 +193,8 @@ public class DataSeeder {
             CaseAggregate case23 = CaseAggregate.create(
                     sofiaMartinezId,
                     new CaseTitle("Planificación Sucesoria"),
-                    new Description("Redacción de testamento y planificación de herencia.")
+                    new Description("Redacción de testamento y planificación de herencia."),
+                    null // specialtyId
             );
             case23.evaluation();
             case23.accept(carlosMendezId); // Carlos
@@ -200,7 +206,8 @@ public class DataSeeder {
             CaseAggregate case31 = CaseAggregate.create(
                     robertoLopezId,
                     new CaseTitle("Pensión Alimenticia"),
-                    new Description("Solicitud de pensión de alimentos para dos hijos menores.")
+                    new Description("Solicitud de pensión de alimentos para dos hijos menores."),
+                    null // specialtyId
             );
             Invitation inv31 = Invitation.create(case31, anaTorresId, InvitationStatus.PENDING);
             case31.getInvitations().add(inv31);
@@ -209,7 +216,8 @@ public class DataSeeder {
             CaseAggregate case32 = CaseAggregate.create(
                     robertoLopezId,
                     new CaseTitle("Defensa Penal - Difamación"),
-                    new Description("Acusación injusta de difamación en redes sociales.")
+                    new Description("Acusación injusta de difamación en redes sociales."),
+                    null // specialtyId
             );
             case32.evaluation();
             case32.accept(mariaRodriguezId); // María - Criminal
@@ -218,7 +226,8 @@ public class DataSeeder {
             CaseAggregate case33 = CaseAggregate.create(
                     robertoLopezId,
                     new CaseTitle("Reclamo a Aseguradora"),
-                    new Description("Rechazo injustificado de reclamo por robo de vehículo.")
+                    new Description("Rechazo injustificado de reclamo por robo de vehículo."),
+                    null // specialtyId
             );
             case33.cancel();
             caseRepository.save(case33);
@@ -228,7 +237,8 @@ public class DataSeeder {
             CaseAggregate case41 = CaseAggregate.create(
                     carmenDiazId,
                     new CaseTitle("Revisión Contrato Laboral"),
-                    new Description("Nuevo empleo con cláusulas de confidencialidad complejas.")
+                    new Description("Nuevo empleo con cláusulas de confidencialidad complejas."),
+                    null // specialtyId
             );
             case41.evaluation();
             case41.accept(luciaGarciaId); // Lucía - Employment
@@ -237,7 +247,8 @@ public class DataSeeder {
             CaseAggregate case42 = CaseAggregate.create(
                     carmenDiazId,
                     new CaseTitle("Conflicto de Herencia"),
-                    new Description("Desacuerdos entre hermanos sobre distribución de herencia paterna.")
+                    new Description("Desacuerdos entre hermanos sobre distribución de herencia paterna."),
+                    null // specialtyId
             );
             Application app42 = Application.create(case42, anaTorresId, ApplicationStatus.SUBMITTED, "Buenos días, soy especialista en derecho familiar y herencias. Me gustaría ayudarle con su caso.");
             case42.getApplications().add(app42);
@@ -246,7 +257,8 @@ public class DataSeeder {
             CaseAggregate case43 = CaseAggregate.create(
                     carmenDiazId,
                     new CaseTitle("Daños por Construcción Vecina"),
-                    new Description("Construcción vecina dañó estructura de mi vivienda.")
+                    new Description("Construcción vecina dañó estructura de mi vivienda."),
+                    null // specialtyId
             );
             case43.evaluation();
             case43.accept(pedroSanchezId); // Pedro - Real Estate
@@ -257,7 +269,8 @@ public class DataSeeder {
             CaseAggregate case51 = CaseAggregate.create(
                     miguelFernandezId,
                     new CaseTitle("Asesoría Fiscal Empresarial"),
-                    new Description("Declaración de impuestos para negocio independiente.")
+                    new Description("Declaración de impuestos para negocio independiente."),
+                    null // specialtyId
             );
             case51.evaluation();
             case51.accept(carlosMendezId); // Carlos - Tax
@@ -267,7 +280,8 @@ public class DataSeeder {
             CaseAggregate case52 = CaseAggregate.create(
                     miguelFernandezId,
                     new CaseTitle("Retención Indebida de Garantía"),
-                    new Description("Arrendador retiene garantía sin justificación.")
+                    new Description("Arrendador retiene garantía sin justificación."),
+                    null // specialtyId
             );
             case52.evaluation();
             case52.accept(mariaRodriguezId); // María
@@ -276,7 +290,8 @@ public class DataSeeder {
             CaseAggregate case53 = CaseAggregate.create(
                     miguelFernandezId,
                     new CaseTitle("Negociación Salarial"),
-                    new Description("Ascenso con bajo incremento salarial. Necesito asesoría.")
+                    new Description("Ascenso con bajo incremento salarial. Necesito asesoría."),
+                    null // specialtyId
             );
             Invitation inv53 = Invitation.create(case53, luciaGarciaId, InvitationStatus.ACCEPTED);
             case53.getInvitations().add(inv53);
