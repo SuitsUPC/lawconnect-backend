@@ -62,10 +62,12 @@ public class ClientCommandServiceImpl implements ClientCommandService {
         var client = clientRepository.findByUserId(command.userId())
                 .orElseThrow(() -> new IllegalArgumentException("Client profile not found for user ID: " + command.userId()));
 
+        // Validar que el DNI no esté en uso por otro cliente
         if (!client.getDniValue().equals(command.dni()) && clientRepository.existsByDni_Value(command.dni())) {
             throw new IllegalArgumentException("Client with DNI " + command.dni() + " already exists.");
         }
 
+        // Actualizar los campos usando los setters generados por Lombok
         client.setFullName(new FullName(command.firstname(), command.lastname()));
         client.setContact(command.contactInfo());
         client.setDni(new Dni(command.dni()));
