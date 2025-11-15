@@ -373,7 +373,8 @@ JAR_CHECK=$(gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
     cd /app
     MISSING=0
     echo 'Verificando JARs compilados:'
-    for service in iam profiles cases api-gateway; do
+    # IAM, Profiles y Cases tienen el sufijo -service
+    for service in iam profiles cases; do
         JAR_PATH=\"microservices/\${service}/target/\${service}-service-0.0.1-SNAPSHOT.jar\"
         if [ -f \"\$JAR_PATH\" ]; then
             echo \"  ✅ \${service}: \$(du -h \$JAR_PATH | cut -f1)\"
@@ -382,6 +383,14 @@ JAR_CHECK=$(gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
             MISSING=1
         fi
     done
+    # API Gateway NO tiene el sufijo -service
+    JAR_PATH=\"microservices/api-gateway/target/api-gateway-0.0.1-SNAPSHOT.jar\"
+    if [ -f \"\$JAR_PATH\" ]; then
+        echo \"  ✅ api-gateway: \$(du -h \$JAR_PATH | cut -f1)\"
+    else
+        echo \"  ❌ api-gateway: NO ENCONTRADO\"
+        MISSING=1
+    fi
     if [ \$MISSING -eq 1 ]; then
         echo 'JARS_MISSING'
     else
