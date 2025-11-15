@@ -19,6 +19,60 @@ NC='\033[0m' # No Color
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MVNW="$PROJECT_ROOT/mvnw"
 
+# Configurar JAVA_HOME si no está definido (necesario para compilación)
+if [ -z "$JAVA_HOME" ] || [ ! -d "$JAVA_HOME" ]; then
+    # Cargar variables de entorno del sistema
+    [ -f /etc/profile ] && source /etc/profile 2>/dev/null || true
+    [ -f ~/.bashrc ] && source ~/.bashrc 2>/dev/null || true
+    
+    # Intentar encontrar Java 17 usando múltiples métodos
+    JAVA_FOUND=""
+    
+    # Método 1: Buscar en ubicaciones comunes
+    for JAVA_DIR in "/usr/lib/jvm/java-17-openjdk-amd64" "/usr/lib/jvm/java-17-openjdk" "/usr/lib/jvm/java-17"; do
+        if [ -d "$JAVA_DIR" ] && [ -f "$JAVA_DIR/bin/java" ]; then
+            JAVA_FOUND="$JAVA_DIR"
+            break
+        fi
+    done
+    
+    # Método 2: Usar update-alternatives
+    if [ -z "$JAVA_FOUND" ] && command -v update-alternatives > /dev/null 2>&1; then
+        JAVA_ALT=$(update-alternatives --list java 2>/dev/null | head -1)
+        if [ ! -z "$JAVA_ALT" ] && [ -f "$JAVA_ALT" ]; then
+            JAVA_FOUND=$(dirname $(dirname "$JAVA_ALT"))
+        fi
+    fi
+    
+    # Método 3: Buscar java en PATH
+    if [ -z "$JAVA_FOUND" ] && command -v java > /dev/null 2>&1; then
+        JAVA_PATH=$(which java)
+        if [ ! -z "$JAVA_PATH" ]; then
+            # Resolver symlinks
+            JAVA_REAL=$(readlink -f "$JAVA_PATH" 2>/dev/null || readlink "$JAVA_PATH" 2>/dev/null || echo "$JAVA_PATH")
+            JAVA_FOUND=$(dirname $(dirname "$JAVA_REAL"))
+        fi
+    fi
+    
+    # Método 4: Buscar en todo /usr/lib/jvm
+    if [ -z "$JAVA_FOUND" ] && [ -d "/usr/lib/jvm" ]; then
+        for JAVA_DIR in /usr/lib/jvm/*; do
+            if [ -d "$JAVA_DIR" ] && [ -f "$JAVA_DIR/bin/java" ]; then
+                JAVA_FOUND="$JAVA_DIR"
+                break
+            fi
+        done
+    fi
+    
+    if [ ! -z "$JAVA_FOUND" ] && [ -d "$JAVA_FOUND" ]; then
+        export JAVA_HOME="$JAVA_FOUND"
+        export PATH="$JAVA_HOME/bin:$PATH"
+        echo -e "${BLUE}✅ Java encontrado en: $JAVA_HOME${NC}"
+    else
+        echo -e "${YELLOW}⚠️  Java no encontrado. Intentando usar Maven wrapper sin JAVA_HOME...${NC}"
+    fi
+fi
+
 # Asegurar que mvnw tenga permisos de ejecución
 chmod +x "$MVNW" 2>/dev/null || true
 
@@ -175,7 +229,7 @@ fi
 
 echo ""
 echo -e "${GREEN}⏳ Esperando a que los servicios inicien...${NC}"
-sleep 10
+sleep 30
 
 # Verificar estado de los contenedores
 echo ""
@@ -236,8 +290,8 @@ echo -e "${BLUE}🧪 Probando endpoints a través del Gateway (puerto 8080)...${
 echo ""
 
 # Esperar un poco más para que los servicios estén completamente listos
-echo -e "${YELLOW}⏳ Esperando a que los servicios estén completamente listos...${NC}"
-sleep 15
+echo -e "${YELLOW}⏳ Esperando a que los servicios estén completamente listos (90 segundos)...${NC}"
+sleep 90
 
 # Variable global para el token JWT
 JWT_TOKEN=""
