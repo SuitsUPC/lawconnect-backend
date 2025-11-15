@@ -19,6 +19,16 @@ NC='\033[0m' # No Color
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MVNW="$PROJECT_ROOT/mvnw"
 
+# Detectar si necesitamos usar sudo para Docker y configurar variable
+DOCKER_CMD="docker"
+if ! docker info > /dev/null 2>&1; then
+    if sudo docker info > /dev/null 2>&1; then
+        DOCKER_CMD="sudo docker"
+        echo -e "${BLUE}ℹ️  Usando sudo para comandos de Docker${NC}"
+    fi
+fi
+export DOCKER_CMD
+
 # Configurar JAVA_HOME si no está definido (necesario para compilación)
 if [ -z "$JAVA_HOME" ] || [ ! -d "$JAVA_HOME" ]; then
     # Cargar variables de entorno del sistema
@@ -95,21 +105,21 @@ compile_service() {
 
 # Verificar que Docker está corriendo
 check_docker() {
-    if ! docker info > /dev/null 2>&1; then
-        echo -e "${YELLOW}⚠️  Docker no está corriendo. Por favor inicia Docker Desktop.${NC}"
-        return 1
+    if $DOCKER_CMD info > /dev/null 2>&1; then
+        return 0
     fi
-    return 0
+    echo -e "${YELLOW}⚠️  Docker no está corriendo. Por favor inicia Docker Desktop.${NC}"
+    return 1
 }
 
 # Función para liberar un puerto
 free_port() {
     local port=$1
     # Primero intentar detener contenedores Docker que usen el puerto
-    local containers=$(docker ps --format "{{.ID}} {{.Ports}}" 2>/dev/null | grep ":$port->" | awk '{print $1}' || true)
+    local containers=$($DOCKER_CMD ps --format "{{.ID}} {{.Ports}}" 2>/dev/null | grep ":$port->" | awk '{print $1}' || true)
     if [ ! -z "$containers" ]; then
         echo -e "${YELLOW}⚠️  Puerto $port en uso por contenedor Docker, deteniendo...${NC}"
-        echo "$containers" | xargs docker stop 2>/dev/null || true
+        echo "$containers" | xargs $DOCKER_CMD stop 2>/dev/null || true
         sleep 1
         return
     fi
@@ -151,8 +161,8 @@ echo -e "${BLUE}🔌 Liberando puertos del proyecto (8080, 8081, 8082, 8083, 330
 
 # Detener contenedores del proyecto primero (esto liberará los puertos)
 echo -e "${BLUE}🛑 Deteniendo contenedores del proyecto para liberar puertos...${NC}"
-docker compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" down > /dev/null 2>&1 || true
-docker stop iam-service profiles-service cases-service api-gateway iam-db profiles-db cases-db 2>/dev/null || true
+$DOCKER_CMD compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" down > /dev/null 2>&1 || true
+$DOCKER_CMD stop iam-service profiles-service cases-service api-gateway iam-db profiles-db cases-db 2>/dev/null || true
 sleep 2
 
 # Luego liberar puertos que puedan estar en uso por otros procesos
@@ -191,23 +201,23 @@ if ! check_docker > /dev/null 2>&1; then
 else
     # 1. Eliminar contenedores específicos por nombre (por si quedaron huérfanos)
     echo -e "${BLUE}🗑️  Paso 1: Eliminando contenedores huérfanos...${NC}"
-    docker stop iam-service profiles-service cases-service api-gateway iam-db profiles-db cases-db 2>/dev/null || true
-    docker rm -f iam-service profiles-service cases-service api-gateway iam-db profiles-db cases-db 2>/dev/null || true
+    $DOCKER_CMD stop iam-service profiles-service cases-service api-gateway iam-db profiles-db cases-db 2>/dev/null || true
+    $DOCKER_CMD rm -f iam-service profiles-service cases-service api-gateway iam-db profiles-db cases-db 2>/dev/null || true
 
     # 2. Eliminar imágenes específicas del proyecto
     echo -e "${BLUE}🖼️  Paso 2: Eliminando imágenes del proyecto...${NC}"
-    docker rmi -f microservices-iam-service microservices-profiles-service microservices-cases-service microservices-api-gateway 2>/dev/null || true
-    docker rmi -f iam-service profiles-service cases-service api-gateway 2>/dev/null || true
+    $DOCKER_CMD rmi -f microservices-iam-service microservices-profiles-service microservices-cases-service microservices-api-gateway 2>/dev/null || true
+    $DOCKER_CMD rmi -f iam-service profiles-service cases-service api-gateway 2>/dev/null || true
 
     # 3. Eliminar volúmenes específicos del proyecto
     echo -e "${BLUE}💾 Paso 3: Eliminando volúmenes del proyecto...${NC}"
-    docker volume rm microservices_iam-db-data microservices_profiles-db-data microservices_cases-db-data 2>/dev/null || true
-    docker volume ls | grep -E "microservices_(iam|profiles|cases)" | awk '{print $2}' | xargs docker volume rm 2>/dev/null || true
+    $DOCKER_CMD volume rm microservices_iam-db-data microservices_profiles-db-data microservices_cases-db-data 2>/dev/null || true
+    $DOCKER_CMD volume ls | grep -E "microservices_(iam|profiles|cases)" | awk '{print $2}' | xargs $DOCKER_CMD volume rm 2>/dev/null || true
 
     # 4. Limpiar redes específicas del proyecto
     echo -e "${BLUE}🌐 Paso 4: Limpiando redes del proyecto...${NC}"
-    docker network rm microservices_lawconnect-network 2>/dev/null || true
-    docker network ls | grep -E "microservices_lawconnect" | awk '{print $1}' | xargs docker network rm 2>/dev/null || true
+    $DOCKER_CMD network rm microservices_lawconnect-network 2>/dev/null || true
+    $DOCKER_CMD network ls | grep -E "microservices_lawconnect" | awk '{print $1}' | xargs $DOCKER_CMD network rm 2>/dev/null || true
 fi
 
 # Verificar que Docker sigue funcionando antes de levantar servicios
@@ -222,7 +232,7 @@ echo ""
 
 # Levantar los servicios
 echo -e "${BLUE}🐳 Levantando servicios con Docker Compose...${NC}"
-if ! docker compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" up --build -d; then
+if ! $DOCKER_CMD compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" up --build -d; then
     echo -e "${YELLOW}⚠️  Error al levantar los servicios con Docker Compose.${NC}"
     exit 1
 fi
@@ -234,7 +244,7 @@ sleep 30
 # Verificar estado de los contenedores
 echo ""
 echo -e "${BLUE}📊 Estado de los contenedores:${NC}"
-docker compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" ps
+$DOCKER_CMD compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" ps
 
 echo ""
 echo -e "${BLUE}📋 Mostrando logs cortos de los servicios (últimas 20 líneas)...${NC}"
@@ -242,25 +252,25 @@ echo ""
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}IAM Service Logs:${NC}"
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-docker compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" logs --tail=20 iam-service || true
+$DOCKER_CMD compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" logs --tail=20 iam-service || true
 
 echo ""
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}Profiles Service Logs:${NC}"
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-docker compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" logs --tail=20 profiles-service || true
+$DOCKER_CMD compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" logs --tail=20 profiles-service || true
 
 echo ""
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}Cases Service Logs:${NC}"
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-docker compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" logs --tail=20 cases-service || true
+$DOCKER_CMD compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" logs --tail=20 cases-service || true
 
 echo ""
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "${BLUE}API Gateway Logs:${NC}"
 echo -e "${YELLOW}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-docker compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" logs --tail=20 api-gateway || true
+$DOCKER_CMD compose -f "$PROJECT_ROOT/microservices/docker-compose.yml" logs --tail=20 api-gateway || true
 
 echo ""
 echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
