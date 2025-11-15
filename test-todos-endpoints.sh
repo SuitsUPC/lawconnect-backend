@@ -42,6 +42,18 @@ TOTAL_TESTS=0
 PASSED_TESTS=0
 FAILED_TESTS=0
 
+# Función helper para mostrar respuestas
+show_response() {
+    local body=$1
+    if [ ! -z "$body" ] && [ "$body" != "null" ]; then
+        if [ ${#body} -lt 500 ]; then
+            echo -e "  ${GREEN}   Response: $body${NC}"
+        else
+            echo -e "  ${GREEN}   Response: $(echo "$body" | head -c 500)...${NC}"
+        fi
+    fi
+}
+
 # Función para hacer una petición HTTP
 make_request() {
     local method=$1
@@ -97,9 +109,7 @@ test_endpoint() {
     if [ "$http_code" = "$expected_status" ] || ([ "$expected_status" = "200" ] && [ "$http_code" = "201" ]) || ([ "$expected_status" = "200" ] && [ "$http_code" = "204" ]); then
         PASSED_TESTS=$((PASSED_TESTS + 1))
         echo -e "  ${GREEN}✅ PASS - Status: $http_code${NC}"
-        if [ ! -z "$body" ] && [ "$body" != "null" ] && [ "$body" != "[]" ] && [ ${#body} -lt 150 ]; then
-            echo -e "  ${GREEN}   Response: $(echo "$body" | head -c 100)...${NC}"
-        fi
+        show_response "$body"
         echo ""
         return 0
     else
@@ -145,12 +155,16 @@ if [ "$http_code" = "201" ]; then
     PASSED_TESTS=$((PASSED_TESTS + 1))
     echo -e "${BLUE}[Test #${TOTAL_TESTS}] POST /api/v1/authentication/sign-up - Crear usuario CLIENT${NC}"
     echo -e "  ${GREEN}✅ PASS - Status: $http_code${NC}"
+    show_response "$body"
     echo ""
 else
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
     FAILED_TESTS=$((FAILED_TESTS + 1))
     echo -e "${BLUE}[Test #${TOTAL_TESTS}] POST /api/v1/authentication/sign-up - Crear usuario CLIENT${NC}"
     echo -e "  ${RED}❌ FAIL - Status: $http_code${NC}"
+    if [ ! -z "$body" ]; then
+        echo -e "  ${RED}   Error: $(echo "$body" | head -c 150)${NC}"
+    fi
     echo ""
 fi
 
@@ -166,12 +180,16 @@ if [ "$http_code" = "201" ]; then
     PASSED_TESTS=$((PASSED_TESTS + 1))
     echo -e "${BLUE}[Test #${TOTAL_TESTS}] POST /api/v1/authentication/sign-up - Crear usuario LAWYER${NC}"
     echo -e "  ${GREEN}✅ PASS - Status: $http_code${NC}"
+    show_response "$body"
     echo ""
 else
     TOTAL_TESTS=$((TOTAL_TESTS + 1))
     FAILED_TESTS=$((FAILED_TESTS + 1))
     echo -e "${BLUE}[Test #${TOTAL_TESTS}] POST /api/v1/authentication/sign-up - Crear usuario LAWYER${NC}"
     echo -e "  ${RED}❌ FAIL - Status: $http_code${NC}"
+    if [ ! -z "$body" ]; then
+        echo -e "  ${RED}   Error: $(echo "$body" | head -c 150)${NC}"
+    fi
     echo ""
 fi
 
@@ -313,6 +331,7 @@ if [ ! -z "$CLIENT_USER_ID" ]; then
         PASSED_TESTS=$((PASSED_TESTS + 1))
         echo -e "${BLUE}[Test #${TOTAL_TESTS}] POST /api/v1/cases - Crear caso${NC}"
         echo -e "  ${GREEN}✅ PASS - Status: $http_code${NC}"
+        show_response "$body"
         echo ""
     else
         TOTAL_TESTS=$((TOTAL_TESTS + 1))
@@ -349,9 +368,39 @@ fi
 # 26. GET /api/v1/cases/status
 test_endpoint "GET" "${BASE_URL}/api/v1/cases/status?status=OPEN" "GET /api/v1/cases/status - Obtener casos por estado" "" "true"
 
-# 27. PUT /api/v1/cases/{caseId}/close
-if [ ! -z "$CASE_ID" ] && [ ! -z "$CLIENT_USER_ID" ]; then
-    test_endpoint "PUT" "${BASE_URL}/api/v1/cases/${CASE_ID}/close?clientId=${CLIENT_USER_ID}" "PUT /api/v1/cases/{caseId}/close - Cerrar caso" "" "true" "200"
+# 27. PUT /api/v1/cases/{caseId}/close (necesita que el caso esté en estado ACCEPTED)
+# Primero creamos un caso, luego una aplicación, la aceptamos, y finalmente cerramos el caso
+if [ ! -z "$CLIENT_USER_ID" ] && [ ! -z "$LAWYER_USER_ID" ]; then
+    # Crear caso para cerrar
+    case_data="{\"title\":\"Caso para cerrar\",\"description\":\"Descripción\",\"clientId\":\"${CLIENT_USER_ID}\",\"status\":\"OPEN\"}"
+    response=$(make_request "POST" "${BASE_URL}/api/v1/cases" "$case_data" "true" "$JWT_TOKEN")
+    body=$(echo "$response" | sed '$d')
+    CLOSE_CASE_ID=$(echo "$body" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4 || echo "")
+    
+    if [ ! -z "$CLOSE_CASE_ID" ]; then
+        # Crear aplicación
+        application_data="{\"caseId\":\"${CLOSE_CASE_ID}\",\"lawyerId\":\"${LAWYER_USER_ID}\",\"message\":\"Aplicación para cerrar caso\"}"
+        response=$(make_request "POST" "${BASE_URL}/api/v1/applications" "$application_data" "true" "$JWT_TOKEN")
+        body=$(echo "$response" | sed '$d')
+        CLOSE_APP_ID=$(echo "$body" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2 || echo "")
+        
+        if [ ! -z "$CLOSE_APP_ID" ]; then
+            # Aceptar aplicación (esto cambia el estado del caso a ACCEPTED)
+            response=$(make_request "PUT" "${BASE_URL}/api/v1/applications/${CLOSE_APP_ID}/accept?clientId=${CLIENT_USER_ID}" "" "true" "$JWT_TOKEN")
+            http_code=$(echo "$response" | tail -n1)
+            
+            if [ "$http_code" = "200" ]; then
+                # Ahora sí podemos cerrar el caso
+                test_endpoint "PUT" "${BASE_URL}/api/v1/cases/${CLOSE_CASE_ID}/close?clientId=${CLIENT_USER_ID}" "PUT /api/v1/cases/{caseId}/close - Cerrar caso" "" "true" "200"
+            else
+                TOTAL_TESTS=$((TOTAL_TESTS + 1))
+                FAILED_TESTS=$((FAILED_TESTS + 1))
+                echo -e "${BLUE}[Test #${TOTAL_TESTS}] PUT /api/v1/cases/{caseId}/close - Cerrar caso${NC}"
+                echo -e "  ${RED}❌ FAIL - No se pudo aceptar la aplicación (Status: $http_code)${NC}"
+                echo ""
+            fi
+        fi
+    fi
 fi
 
 # 28. PUT /api/v1/cases/{caseId}/cancel (crear otro caso primero)
@@ -388,6 +437,7 @@ if [ ! -z "$CASE_ID" ] && [ ! -z "$LAWYER_USER_ID" ]; then
         PASSED_TESTS=$((PASSED_TESTS + 1))
         echo -e "${BLUE}[Test #${TOTAL_TESTS}] POST /api/v1/applications - Crear aplicación${NC}"
         echo -e "  ${GREEN}✅ PASS - Status: $http_code${NC}"
+        show_response "$body"
         echo ""
     else
         TOTAL_TESTS=$((TOTAL_TESTS + 1))
@@ -442,6 +492,7 @@ if [ ! -z "$CASE_ID" ] && [ ! -z "$LAWYER_USER_ID" ] && [ ! -z "$CLIENT_USER_ID"
         PASSED_TESTS=$((PASSED_TESTS + 1))
         echo -e "${BLUE}[Test #${TOTAL_TESTS}] POST /api/v1/invitations - Crear invitación${NC}"
         echo -e "  ${GREEN}✅ PASS - Status: $http_code${NC}"
+        show_response "$body"
         echo ""
     else
         TOTAL_TESTS=$((TOTAL_TESTS + 1))
@@ -453,16 +504,51 @@ if [ ! -z "$CASE_ID" ] && [ ! -z "$LAWYER_USER_ID" ] && [ ! -z "$CLIENT_USER_ID"
 fi
 
 # 34. GET /api/v1/invitations
-test_endpoint "GET" "${BASE_URL}/api/v1/invitations" "GET /api/v1/invitations - Listar todas las invitaciones" "" "true"
+if [ ! -z "$LAWYER_USER_ID" ]; then
+    test_endpoint "GET" "${BASE_URL}/api/v1/invitations?lawyerId=${LAWYER_USER_ID}" "GET /api/v1/invitations - Listar todas las invitaciones" "" "true" "200"
+fi
 
 # 35. GET /api/v1/invitations/case
 if [ ! -z "$CASE_ID" ]; then
     test_endpoint "GET" "${BASE_URL}/api/v1/invitations/case?caseId=${CASE_ID}" "GET /api/v1/invitations/case - Listar invitaciones por caso" "" "true"
 fi
 
-# 36. PUT /api/v1/invitations/{invitationId}/accept
-if [ ! -z "$INVITATION_ID" ] && [ ! -z "$LAWYER_USER_ID" ]; then
-    test_endpoint "PUT" "${BASE_URL}/api/v1/invitations/${INVITATION_ID}/accept?lawyerId=${LAWYER_USER_ID}" "PUT /api/v1/invitations/{invitationId}/accept - Aceptar invitación" "" "true" "200"
+# 36. PUT /api/v1/invitations/{invitationId}/accept (necesita que el caso esté en estado EVALUATION)
+# Primero creamos un caso, luego una aplicación, la aceptamos (esto cambia el estado a EVALUATION), 
+# luego creamos una invitación, y finalmente la aceptamos
+if [ ! -z "$CLIENT_USER_ID" ] && [ ! -z "$LAWYER_USER_ID" ]; then
+    # Crear caso para invitación
+    case_data="{\"title\":\"Caso para invitación\",\"description\":\"Descripción\",\"clientId\":\"${CLIENT_USER_ID}\",\"status\":\"OPEN\"}"
+    response=$(make_request "POST" "${BASE_URL}/api/v1/cases" "$case_data" "true" "$JWT_TOKEN")
+    body=$(echo "$response" | sed '$d')
+    INVITE_CASE_ID=$(echo "$body" | grep -o '"id":"[^"]*"' | head -1 | cut -d'"' -f4 || echo "")
+    
+    if [ ! -z "$INVITE_CASE_ID" ]; then
+        # Crear aplicación
+        application_data="{\"caseId\":\"${INVITE_CASE_ID}\",\"lawyerId\":\"${LAWYER_USER_ID}\",\"message\":\"Aplicación para cambiar a EVALUATION\"}"
+        response=$(make_request "POST" "${BASE_URL}/api/v1/applications" "$application_data" "true" "$JWT_TOKEN")
+        body=$(echo "$response" | sed '$d')
+        EVAL_APP_ID=$(echo "$body" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2 || echo "")
+        
+        if [ ! -z "$EVAL_APP_ID" ]; then
+            # Aceptar aplicación (esto cambia el estado del caso a EVALUATION)
+            response=$(make_request "PUT" "${BASE_URL}/api/v1/applications/${EVAL_APP_ID}/accept?clientId=${CLIENT_USER_ID}" "" "true" "$JWT_TOKEN")
+            http_code=$(echo "$response" | tail -n1)
+            
+            if [ "$http_code" = "200" ]; then
+                # Crear invitación
+                invitation_data="{\"caseId\":\"${INVITE_CASE_ID}\",\"lawyerId\":\"${LAWYER_USER_ID}\",\"clientId\":\"${CLIENT_USER_ID}\",\"message\":\"Invitación para aceptar\"}"
+                response=$(make_request "POST" "${BASE_URL}/api/v1/invitations" "$invitation_data" "true" "$JWT_TOKEN")
+                body=$(echo "$response" | sed '$d')
+                ACCEPT_INVITATION_ID=$(echo "$body" | grep -o '"id":[0-9]*' | head -1 | cut -d':' -f2 || echo "")
+                
+                if [ ! -z "$ACCEPT_INVITATION_ID" ]; then
+                    # Ahora sí podemos aceptar la invitación
+                    test_endpoint "PUT" "${BASE_URL}/api/v1/invitations/${ACCEPT_INVITATION_ID}/accept?lawyerId=${LAWYER_USER_ID}" "PUT /api/v1/invitations/{invitationId}/accept - Aceptar invitación" "" "true" "200"
+                fi
+            fi
+        fi
+    fi
 fi
 
 # 37. PUT /api/v1/invitations/{invitationId}/reject (crear otra invitación)
@@ -498,7 +584,7 @@ fi
 
 # 40. POST /api/v1/comments/general
 if [ ! -z "$CASE_ID" ] && [ ! -z "$CLIENT_USER_ID" ]; then
-    comment_data="{\"caseId\":\"${CASE_ID}\",\"authorId\":\"${CLIENT_USER_ID}\",\"content\":\"Comentario general de prueba\"}"
+    comment_data="{\"caseId\":\"${CASE_ID}\",\"authorId\":\"${CLIENT_USER_ID}\",\"text\":\"Comentario general de prueba\"}"
     response=$(make_request "POST" "${BASE_URL}/api/v1/comments/general" "$comment_data" "true" "$JWT_TOKEN")
     http_code=$(echo "$response" | tail -n1)
     body=$(echo "$response" | sed '$d')
@@ -509,6 +595,7 @@ if [ ! -z "$CASE_ID" ] && [ ! -z "$CLIENT_USER_ID" ]; then
         PASSED_TESTS=$((PASSED_TESTS + 1))
         echo -e "${BLUE}[Test #${TOTAL_TESTS}] POST /api/v1/comments/general - Crear comentario general${NC}"
         echo -e "  ${GREEN}✅ PASS - Status: $http_code${NC}"
+        show_response "$body"
         echo ""
     else
         TOTAL_TESTS=$((TOTAL_TESTS + 1))
@@ -521,7 +608,7 @@ fi
 
 # 41. POST /api/v1/comments/final
 if [ ! -z "$CASE_ID" ] && [ ! -z "$LAWYER_USER_ID" ]; then
-    comment_data="{\"caseId\":\"${CASE_ID}\",\"lawyerId\":\"${LAWYER_USER_ID}\",\"content\":\"Comentario final de prueba\"}"
+    comment_data="{\"caseId\":\"${CASE_ID}\",\"authorId\":\"${LAWYER_USER_ID}\",\"text\":\"Comentario final de prueba\"}"
     test_endpoint "POST" "${BASE_URL}/api/v1/comments/final" "POST /api/v1/comments/final - Crear comentario final" "$comment_data" "true" "201"
 fi
 

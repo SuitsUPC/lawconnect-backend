@@ -92,7 +92,12 @@ public class InvitationsController {
             @ApiResponse(responseCode = "200", description = "Invitations retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Lawyer not found")
     })
-    public ResponseEntity<List<InvitationResource>> getInvitations(@RequestParam("lawyerId") UUID lawyerId) {
+    public ResponseEntity<List<InvitationResource>> getInvitations(@RequestParam(value = "lawyerId", required = false) UUID lawyerId) {
+        if (lawyerId == null) {
+            // If no lawyerId is provided, return empty list or all invitations
+            // For now, return empty list as the endpoint requires a lawyerId
+            return ResponseEntity.ok(List.of());
+        }
         var list = invitationQueryService.handle(
                         new GetInvitationsByLawyerIdQuery(lawyerId)
                 ).stream().map(InvitationResourceFromEntityAssembler::toResourceFromEntity)

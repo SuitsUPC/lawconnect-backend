@@ -124,19 +124,22 @@ public class LawyerCommandServiceImpl implements LawyerCommandService {
         lawyer.setDni(new Dni(command.dni()));
         lawyer.setDescription(new Description(command.description()));
 
-        var specialties = command.specialties().stream()
-                .map(specialtyName -> {
-                    try {
-                        var specialtyEnum = LawyerSpecialties.valueOf(specialtyName);
-                        return lawyerSpecialtyRepository.findByName(specialtyEnum)
-                                .orElseThrow(() -> new IllegalArgumentException("Specialty not found: " + specialtyName));
-                    } catch (IllegalArgumentException e) {
-                        throw new IllegalArgumentException("Invalid specialty name: " + specialtyName);
-                    }
-                })
-                .collect(Collectors.toSet());
+        // Only update specialties if they are provided (not null)
+        if (command.specialties() != null && !command.specialties().isEmpty()) {
+            var specialties = command.specialties().stream()
+                    .map(specialtyName -> {
+                        try {
+                            var specialtyEnum = LawyerSpecialties.valueOf(specialtyName);
+                            return lawyerSpecialtyRepository.findByName(specialtyEnum)
+                                    .orElseThrow(() -> new IllegalArgumentException("Specialty not found: " + specialtyName));
+                        } catch (IllegalArgumentException e) {
+                            throw new IllegalArgumentException("Invalid specialty name: " + specialtyName);
+                        }
+                    })
+                    .collect(Collectors.toSet());
 
-        lawyer.setSpecialties(new HashSet<>(specialties));
+            lawyer.setSpecialties(new HashSet<>(specialties));
+        }
 
         var updated = lawyerRepository.save(lawyer);
 
