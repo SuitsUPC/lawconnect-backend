@@ -50,7 +50,7 @@ public class DocumentsController {
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Upload file to case")
     public ResponseEntity<DocumentResource> uploadDocumentFile(
-            @PathVariable String caseId,
+            @PathVariable("caseId") String caseId,
             @RequestParam String uploadedBy,
             @RequestParam("file") MultipartFile file
     ) {
@@ -138,7 +138,7 @@ public class DocumentsController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Upload document metadata to case")
     public ResponseEntity<DocumentResource> uploadDocument(
-            @PathVariable String caseId,
+            @PathVariable("caseId") String caseId,
             @RequestParam String uploadedBy,
             @RequestBody UploadDocumentResource resource
     ) {
@@ -204,7 +204,7 @@ public class DocumentsController {
 
     @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Get all documents for a case")
-    public ResponseEntity<List<DocumentResource>> getDocumentsByCase(@PathVariable String caseId) {
+    public ResponseEntity<List<DocumentResource>> getDocumentsByCase(@PathVariable("caseId") String caseId) {
         var query = new GetDocumentsByCaseIdQuery(UUID.fromString(caseId));
         var documents = queryService.handle(query);
 
@@ -218,8 +218,8 @@ public class DocumentsController {
     @GetMapping(value = "/download/{filename}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
     @Operation(summary = "Download document file")
     public ResponseEntity<Resource> downloadDocument(
-            @PathVariable String caseId,
-            @PathVariable String filename
+            @PathVariable("caseId") String caseId,
+            @PathVariable("filename") String filename
     ) {
         try {
             String targetFileUrl = "/api/v1/cases/" + caseId + "/documents/download/" + filename;

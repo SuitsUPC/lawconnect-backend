@@ -134,7 +134,7 @@ public class InvitationsController {
             @ApiResponse(responseCode = "404", description = "Invitation not found")
     })
     public ResponseEntity<InvitationResource> acceptInvitation(
-            @PathVariable Long invitationId,
+            @PathVariable("invitationId") Long invitationId,
             @RequestParam UUID lawyerId
     ) {
         var command = new AcceptInvitationCommand(invitationId, lawyerId);
@@ -159,7 +159,7 @@ public class InvitationsController {
             @ApiResponse(responseCode = "404", description = "Invitation not found")
     })
     public ResponseEntity<InvitationResource> rejectInvitation(
-            @PathVariable Long invitationId,
+            @PathVariable("invitationId") Long invitationId,
             @RequestParam UUID lawyerId
     ) {
         var command = new RejectInvitationCommand(invitationId, lawyerId);

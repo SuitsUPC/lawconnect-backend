@@ -92,7 +92,7 @@ public class CasesController {
             @ApiResponse(responseCode = "200", description = "Case closed successfully"),
             @ApiResponse(responseCode = "404", description = "Case not found")
     })
-    public ResponseEntity<CaseResource> closeCase(@PathVariable UUID caseId, @RequestParam UUID clientId) {
+    public ResponseEntity<CaseResource> closeCase(@PathVariable("caseId") UUID caseId, @RequestParam UUID clientId) {
 
         try {
             var command = new CloseCaseCommand(caseId, clientId);
@@ -130,7 +130,7 @@ public class CasesController {
             @ApiResponse(responseCode = "200", description = "Case canceled successfully"),
             @ApiResponse(responseCode = "404", description = "Case not found")
     })
-    public ResponseEntity<CaseResource> cancelCase(@PathVariable UUID caseId, @RequestParam UUID clientId) {
+    public ResponseEntity<CaseResource> cancelCase(@PathVariable("caseId") UUID caseId, @RequestParam UUID clientId) {
         var command = new CancelCaseCommand(caseId, clientId);
 
         var canceled = caseCommandService.handle(command)
@@ -167,7 +167,7 @@ public class CasesController {
             @ApiResponse(responseCode = "200", description = "Case retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Case not found")
     })
-    public ResponseEntity<CaseResource> getCaseById(@PathVariable UUID caseId) {
+    public ResponseEntity<CaseResource> getCaseById(@PathVariable("caseId") UUID caseId) {
         var resource = caseQueryService.handle(new GetCaseByIdQuery(caseId))
                 .map(CaseResourceFromEntityAssembler::toResourceFromEntity)
                 .orElseThrow(() -> new IllegalStateException("Case not found"));
@@ -187,7 +187,7 @@ public class CasesController {
             @ApiResponse(responseCode = "200", description = "Cases retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Client not found")
     })
-    public ResponseEntity<List<CaseResource>> getCasesByClient(@PathVariable UUID clientId) {
+    public ResponseEntity<List<CaseResource>> getCasesByClient(@PathVariable("clientId") UUID clientId) {
         var list = caseQueryService.handle(new GetCasesByClientIdQuery(clientId))
                 .stream().map(CaseResourceFromEntityAssembler::toResourceFromEntity)
                 .collect(Collectors.toList());
@@ -247,7 +247,7 @@ public class CasesController {
             @ApiResponse(responseCode = "200", description = "Cases retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Lawyer not found")
     })
-    public ResponseEntity<List<CaseResource>> getCasesByLawyer(@PathVariable UUID lawyerId) {
+    public ResponseEntity<List<CaseResource>> getCasesByLawyer(@PathVariable("lawyerId") UUID lawyerId) {
         var list = caseQueryService.handle(new GetCasesByLawyerIdQuery(lawyerId))
                 .stream().map(CaseResourceFromEntityAssembler::toResourceFromEntity)
                 .collect(Collectors.toList());

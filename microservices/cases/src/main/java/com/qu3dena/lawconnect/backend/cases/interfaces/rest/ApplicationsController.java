@@ -99,7 +99,7 @@ public class ApplicationsController {
             @ApiResponse(responseCode = "404", description = "Application not found")
     })
     public ResponseEntity<ApplicationResource> acceptApplication(
-            @PathVariable Long applicationId,
+            @PathVariable("applicationId") Long applicationId,
             @RequestParam UUID clientId
     ) {
         var command = new AcceptApplicationCommand(applicationId, clientId);
@@ -126,7 +126,7 @@ public class ApplicationsController {
             @ApiResponse(responseCode = "404", description = "Application not found")
     })
     public ResponseEntity<ApplicationResource> rejectApplication(
-            @PathVariable Long applicationId,
+            @PathVariable("applicationId") Long applicationId,
             @RequestParam UUID clientId
     ) {
         var command = new RejectApplicationCommand(applicationId, clientId);

@@ -34,7 +34,7 @@ public class MessagesController {
     @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Send message in case")
     public ResponseEntity<MessageResource> sendMessage(
-            @PathVariable String caseId,
+            @PathVariable("caseId") String caseId,
             @RequestParam String senderId,
             @RequestBody SendMessageResource resource
     ) {
@@ -55,7 +55,7 @@ public class MessagesController {
 
     @GetMapping
     @Operation(summary = "Get all messages for a case")
-    public ResponseEntity<List<MessageResource>> getMessagesByCase(@PathVariable String caseId) {
+    public ResponseEntity<List<MessageResource>> getMessagesByCase(@PathVariable("caseId") String caseId) {
         var query = new GetMessagesByCaseIdQuery(UUID.fromString(caseId));
         var messages = queryService.handle(query);
 

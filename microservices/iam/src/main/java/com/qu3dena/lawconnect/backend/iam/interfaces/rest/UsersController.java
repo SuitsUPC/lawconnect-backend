@@ -70,7 +70,7 @@ public class UsersController {
             @ApiResponse(responseCode = "200", description = "User retrieved successfully."),
             @ApiResponse(responseCode = "404", description = "User not found."),
     })
-    public ResponseEntity<UserResource> getUserById(@PathVariable String userId) {
+    public ResponseEntity<UserResource> getUserById(@PathVariable("userId") String userId) {
         var user = userQueryService.handle(new GetUserByIdQuery(UUID.fromString(userId)));
 
         if (user.isEmpty())
