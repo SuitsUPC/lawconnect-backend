@@ -117,8 +117,8 @@ gcloud compute firewall-rules create lawconnect-ports \
     --source-ranges 0.0.0.0/0 \
     --description "LawConnect Backend ports" 2>/dev/null || echo "Firewall ya configurado"
 
-# Clonar proyecto desde GitHub
-echo -e "${BLUE}📥 Clonando proyecto desde GitHub...${NC}"
+# Clonar proyecto desde GitHub y configurar servicio de auto-start
+echo -e "${BLUE}📥 Clonando proyecto desde GitHub y configurando auto-start...${NC}"
 GITHUB_REPO="https://github.com/SuitsUPC/lawconnect-backend.git"
 GITHUB_BRANCH="feature/deploy-gcp"
 
@@ -156,6 +156,11 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
         echo '❌ Error: No se pudo clonar el repositorio'
         exit 1
     fi
+    
+    # Guardar configuración en archivo persistente
+    echo \"GITHUB_REPO=\\\"$GITHUB_REPO\\\"\" | sudo tee /etc/lawconnect-config > /dev/null
+    echo \"GITHUB_BRANCH=\\\"$GITHUB_BRANCH\\\"\" | sudo tee -a /etc/lawconnect-config > /dev/null
+    echo '✅ Configuración guardada en /etc/lawconnect-config'
 "
 
 # Esperar a que Docker esté completamente listo y configurar permisos
@@ -231,11 +236,157 @@ for attempt in {1..3}; do
         pkill -f cloudflared || true
         sudo systemctl stop cloudflared 2>/dev/null || true
         
+        # Crear script de startup completo
+        sudo tee /usr/local/bin/lawconnect-startup.sh > /dev/null <<'EOFSCRIPT'
+#!/bin/bash
+set -e
+
+# Cargar configuración
+if [ -f /etc/lawconnect-config ]; then
+    source /etc/lawconnect-config
+else
+    GITHUB_REPO="https://github.com/SuitsUPC/lawconnect-backend.git"
+    GITHUB_BRANCH="feature/deploy-gcp"
+fi
+
+LOG_FILE="/var/log/lawconnect-startup.log"
+echo \"\$(date): Iniciando LawConnect startup...\" >> \"\$LOG_FILE\"
+
+# Esperar a que Docker esté listo
+echo \"\$(date): Esperando Docker...\" >> \"\$LOG_FILE\"
+for i in {1..60}; do
+    if sudo docker info > /dev/null 2>&1; then
+        echo \"\$(date): Docker está listo\" >> \"\$LOG_FILE\"
+        break
+    fi
+    sleep 2
+done
+
+# Esperar a que la red esté lista
+sleep 5
+
+# Obtener el usuario de la aplicación (no-root)
+APP_USER=\$(ls -ld /home 2>/dev/null | awk '{print \$3}' | grep -v root | head -1)
+if [ -z \"\$APP_USER\" ]; then
+    APP_USER=\$(who 2>/dev/null | awk '{print \$1}' | grep -v root | head -1)
+fi
+if [ -z \"\$APP_USER\" ]; then
+    APP_USER=\"ubuntu\"
+fi
+echo \"\$(date): Usuario de la aplicación: \$APP_USER\" >> \"\$LOG_FILE\"
+
+# Verificar si el proyecto ya existe en /app (primera vez vs reinicio)
+if [ ! -d \"/app/microservices\" ] || [ ! -f \"/app/microservices/docker-compose.yml\" ]; then
+    echo \"\$(date): Proyecto no existe en /app, clonando desde GitHub (primera vez)...\" >> \"\$LOG_FILE\"
+    # Solo clonar si no existe (primera vez)
+    cd /tmp
+    rm -rf lawconnect-backend
+    git clone -b \"\$GITHUB_BRANCH\" \"\$GITHUB_REPO\" lawconnect-backend 2>&1 >> \"\$LOG_FILE\" || {
+        git clone -b main \"\$GITHUB_REPO\" lawconnect-backend 2>&1 >> \"\$LOG_FILE\" || {
+            git clone \"\$GITHUB_REPO\" lawconnect-backend 2>&1 >> \"\$LOG_FILE\"
+        }
+    }
+    
+    if [ -d lawconnect-backend ]; then
+        echo \"\$(date): Copiando proyecto a /app...\" >> \"\$LOG_FILE\"
+        sudo cp -r lawconnect-backend/* /app/ 2>/dev/null || true
+        sudo cp -r lawconnect-backend/.git /app/ 2>/dev/null || true
+        cd /app
+        sudo chmod +x start.sh stop.sh logs.sh status.sh mvnw 2>/dev/null || true
+        sudo chown -R \$APP_USER:\$APP_USER /app 2>/dev/null || true
+        echo \"\$(date): Proyecto copiado a /app\" >> \"\$LOG_FILE\"
+    fi
+else
+    echo \"\$(date): Proyecto ya existe en /app, solo levantando contenedores...\" >> \"\$LOG_FILE\"
+fi
+
+# Detectar comando de Docker
+DOCKER_CMD=\"docker\"
+if ! docker info > /dev/null 2>&1; then
+    if sudo docker info > /dev/null 2>&1; then
+        DOCKER_CMD=\"sudo docker\"
+    fi
+fi
+
+# Verificar si los contenedores ya están corriendo
+cd /app
+CONTAINERS_RUNNING=\$(\$DOCKER_CMD ps --filter \"name=iam-service\|profiles-service\|cases-service\|api-gateway\" --format \"{{.Names}}\" 2>/dev/null | wc -l)
+
+if [ \"\$CONTAINERS_RUNNING\" -gt 0 ]; then
+    echo \"\$(date): Contenedores ya están corriendo, no es necesario levantarlos\" >> \"\$LOG_FILE\"
+else
+    echo \"\$(date): Levantando contenedores Docker existentes (sin rebuild)...\" >> \"\$LOG_FILE\"
+    # Solo levantar los contenedores existentes, sin rebuild
+    cd /app/microservices
+    \$DOCKER_CMD compose up -d >> \"\$LOG_FILE\" 2>&1 || {
+        echo \"\$(date): Error al levantar contenedores, intentando con start.sh...\" >> \"\$LOG_FILE\"
+        # Si falla, puede ser que no existan las imágenes, entonces sí ejecutar start.sh
+        cd /app
+        export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+        export PATH=\$PATH:\$JAVA_HOME/bin
+        if [ ! -z \"\$APP_USER\" ] && [ \"\$APP_USER\" != \"root\" ]; then
+            sudo -u \$APP_USER bash -c \"cd /app && export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64 && export PATH=\\\$PATH:\\\$JAVA_HOME/bin && bash start.sh >> /var/log/lawconnect.log 2>&1\" || {
+                cd /app
+                bash start.sh >> /var/log/lawconnect.log 2>&1
+            }
+        else
+            bash start.sh >> /var/log/lawconnect.log 2>&1
+        fi
+    }
+fi
+
+# Esperar a que los servicios estén listos
+echo \"\$(date): Esperando a que los servicios estén listos...\" >> \"\$LOG_FILE\"
+sleep 30
+
+# Iniciar Cloudflare Tunnel
+echo \"\$(date): Iniciando Cloudflare Tunnel...\" >> \"\$LOG_FILE\"
+if command -v cloudflared &> /dev/null; then
+    sudo systemctl restart cloudflared || {
+        sudo systemctl start cloudflared || true
+    }
+    echo \"\$(date): Cloudflare Tunnel iniciado\" >> \"\$LOG_FILE\"
+    
+    # Obtener URL después de unos segundos
+    sleep 15
+    TUNNEL_URL=\$(sudo journalctl -u cloudflared -n 200 --no-pager 2>/dev/null | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | tail -1)
+    if [ ! -z \"\$TUNNEL_URL\" ]; then
+        echo \"\$TUNNEL_URL\" | sudo tee /tmp/tunnel_url.txt > /dev/null
+        echo \"\$(date): URL del tunnel: \$TUNNEL_URL\" >> \"\$LOG_FILE\"
+    fi
+else
+    echo \"\$(date): cloudflared no está instalado\" >> \"\$LOG_FILE\"
+fi
+
+echo \"\$(date): Startup completado\" >> \"\$LOG_FILE\"
+EOFSCRIPT
+
+        sudo chmod +x /usr/local/bin/lawconnect-startup.sh
+        
+        # Crear servicio systemd para LawConnect
+        sudo tee /etc/systemd/system/lawconnect.service > /dev/null <<'EOFSERVICE'
+[Unit]
+Description=LawConnect Backend Auto-Start
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/bin/lawconnect-startup.sh
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+EOFSERVICE
+
         # Crear servicio systemd para Cloudflare Tunnel
         sudo tee /etc/systemd/system/cloudflared.service > /dev/null <<'EOF'
 [Unit]
 Description=Cloudflare Tunnel
-After=network.target docker.service
+After=network.target docker.service lawconnect.service
+Wants=lawconnect.service
 
 [Service]
 Type=simple
@@ -251,9 +402,9 @@ WantedBy=multi-user.target
 EOF
 
         sudo systemctl daemon-reload
+        sudo systemctl enable lawconnect
         sudo systemctl enable cloudflared
-        sudo systemctl start cloudflared
-        echo '✅ Cloudflare Tunnel iniciado'
+        echo '✅ Servicios systemd configurados para auto-start'
         sleep 8
     " 2>/dev/null; then
         CLOUDFLARE_CONFIGURED=true
@@ -326,13 +477,22 @@ else
     echo ""
 fi
 
+echo -e "${GREEN}🔄 AUTO-START CONFIGURADO:${NC}"
+echo -e "   ✅ Si apagas la VM y la vuelves a encender, todo se levantará automáticamente"
+echo -e "   ✅ Docker, servicios y Cloudflare Tunnel se iniciarán solos"
+echo -e "   ✅ El proyecto se actualizará desde GitHub automáticamente"
+echo -e "   ✅ La nueva URL del tunnel se guardará en /tmp/tunnel_url.txt"
+echo ""
+
 echo -e "${BLUE}🌐 URLs locales (solo para pruebas):${NC}"
 echo -e "   • API Gateway: ${GREEN}http://$VM_IP:8080${NC}"
 echo -e "   • Swagger UI: ${GREEN}http://$VM_IP:8080/swagger-ui.html${NC}"
 echo ""
 echo -e "${BLUE}📝 Comandos útiles:${NC}"
-echo -e "   • Ver logs del backend: ${YELLOW}gcloud compute ssh $VM_NAME --zone=$ZONE --command='tail -f /tmp/lawconnect.log'${NC}"
+echo -e "   • Ver logs del backend: ${YELLOW}gcloud compute ssh $VM_NAME --zone=$ZONE --command='tail -f /var/log/lawconnect.log'${NC}"
+echo -e "   • Ver logs del startup: ${YELLOW}gcloud compute ssh $VM_NAME --zone=$ZONE --command='tail -f /var/log/lawconnect-startup.log'${NC}"
 echo -e "   • Ver logs del tunnel: ${YELLOW}gcloud compute ssh $VM_NAME --zone=$ZONE --command='sudo journalctl -u cloudflared -f'${NC}"
 echo -e "   • Obtener URL del tunnel: ${YELLOW}./get-tunnel-url.sh${NC}"
+echo -e "   • Ver estado de servicios: ${YELLOW}gcloud compute ssh $VM_NAME --zone=$ZONE --command='sudo systemctl status lawconnect cloudflared'${NC}"
 echo ""
 
