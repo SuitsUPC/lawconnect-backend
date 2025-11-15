@@ -45,6 +45,15 @@ public interface InvitationRepository extends JpaRepository<Invitation, Long> {
     List<Invitation> findByLegalCase_Id(UUID caseId);
 
     /**
+     * Finds all invitations for a specific case filtered by status.
+     *
+     * @param caseId the unique identifier of the legal case
+     * @param status the status to filter invitations by
+     * @return a list of invitations linked to the case and matching the provided status
+     */
+    List<Invitation> findByLegalCase_IdAndStatus(UUID caseId, InvitationStatus status);
+
+    /**
      * Finds a specific invitation associated with a lawyer and a legal case.
      *
      * @param lawyerId the unique identifier of the lawyer

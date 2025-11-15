@@ -2,6 +2,7 @@ package com.qu3dena.lawconnect.backend.profiles.application.internal.commandserv
 
 import com.qu3dena.lawconnect.backend.profiles.domain.model.aggregates.ClientAggregate;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.commands.CreateClientCommand;
+import com.qu3dena.lawconnect.backend.profiles.domain.model.commands.UpdateClientProfileCommand;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.valueobjects.Dni;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.valueobjects.FullName;
 import com.qu3dena.lawconnect.backend.profiles.domain.services.ClientCommandService;
@@ -54,5 +55,23 @@ public class ClientCommandServiceImpl implements ClientCommandService {
         var saved = clientRepository.save(client);
 
         return Optional.of(saved);
+    }
+
+    @Override
+    public Optional<ClientAggregate> handle(UpdateClientProfileCommand command) {
+        var client = clientRepository.findByUserId(command.userId())
+                .orElseThrow(() -> new IllegalArgumentException("Client profile not found for user ID: " + command.userId()));
+
+        if (!client.getDniValue().equals(command.dni()) && clientRepository.existsByDni_Value(command.dni())) {
+            throw new IllegalArgumentException("Client with DNI " + command.dni() + " already exists.");
+        }
+
+        client.setFullName(new FullName(command.firstname(), command.lastname()));
+        client.setContact(command.contactInfo());
+        client.setDni(new Dni(command.dni()));
+
+        var updated = clientRepository.save(client);
+
+        return Optional.of(updated);
     }
 }

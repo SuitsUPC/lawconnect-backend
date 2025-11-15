@@ -2,6 +2,7 @@ package com.qu3dena.lawconnect.backend.profiles.application.internal.commandserv
 
 import com.qu3dena.lawconnect.backend.profiles.domain.model.aggregates.LawyerAggregate;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.commands.CreateLawyerCommand;
+import com.qu3dena.lawconnect.backend.profiles.domain.model.commands.UpdateLawyerProfileCommand;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.commands.UpdateLawyerSpecialtiesCommand;
 import com.qu3dena.lawconnect.backend.shared.domain.model.valueobjects.Description;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.valueobjects.Dni;
@@ -105,6 +106,39 @@ public class LawyerCommandServiceImpl implements LawyerCommandService {
         lawyerEntity.setSpecialties(new HashSet<>(specialties));
 
         var updated = lawyerRepository.save(lawyerEntity);
+
+        return Optional.of(updated);
+    }
+
+    @Override
+    public Optional<LawyerAggregate> handle(UpdateLawyerProfileCommand command) {
+        var lawyer = lawyerRepository.findByUserId(command.userId())
+                .orElseThrow(() -> new IllegalArgumentException("Lawyer profile not found for user ID: " + command.userId()));
+
+        if (!lawyer.getDniValue().equals(command.dni()) && lawyerRepository.existsByDni_Value(command.dni())) {
+            throw new IllegalArgumentException("Lawyer with DNI " + command.dni() + " already exists.");
+        }
+
+        lawyer.setFullName(new FullName(command.firstname(), command.lastname()));
+        lawyer.setContact(command.contactInfo());
+        lawyer.setDni(new Dni(command.dni()));
+        lawyer.setDescription(new Description(command.description()));
+
+        var specialties = command.specialties().stream()
+                .map(specialtyName -> {
+                    try {
+                        var specialtyEnum = LawyerSpecialties.valueOf(specialtyName);
+                        return lawyerSpecialtyRepository.findByName(specialtyEnum)
+                                .orElseThrow(() -> new IllegalArgumentException("Specialty not found: " + specialtyName));
+                    } catch (IllegalArgumentException e) {
+                        throw new IllegalArgumentException("Invalid specialty name: " + specialtyName);
+                    }
+                })
+                .collect(Collectors.toSet());
+
+        lawyer.setSpecialties(new HashSet<>(specialties));
+
+        var updated = lawyerRepository.save(lawyer);
 
         return Optional.of(updated);
     }

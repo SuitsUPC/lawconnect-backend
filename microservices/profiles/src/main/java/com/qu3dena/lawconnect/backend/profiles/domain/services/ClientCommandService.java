@@ -2,6 +2,7 @@ package com.qu3dena.lawconnect.backend.profiles.domain.services;
 
 import com.qu3dena.lawconnect.backend.profiles.domain.model.aggregates.ClientAggregate;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.commands.CreateClientCommand;
+import com.qu3dena.lawconnect.backend.profiles.domain.model.commands.UpdateClientProfileCommand;
 
 import java.util.Optional;
 
@@ -23,4 +24,12 @@ public interface ClientCommandService {
      * @return an {@link Optional} containing the created {@link ClientAggregate}, or empty if creation fails
      */
     Optional<ClientAggregate> handle(CreateClientCommand command);
+
+    /**
+     * Handles the update of an existing client profile.
+     *
+     * @param command the command containing the updated details for the client
+     * @return an {@link Optional} containing the updated {@link ClientAggregate}, or empty if update fails
+     */
+    Optional<ClientAggregate> handle(UpdateClientProfileCommand command);
 }

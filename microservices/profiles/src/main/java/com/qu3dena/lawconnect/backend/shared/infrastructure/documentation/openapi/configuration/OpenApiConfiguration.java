@@ -73,7 +73,13 @@ public class OpenApiConfiguration {
                                 .scheme("bearer")
                                 .bearerFormat("JWT")));
 
-        openApi.addServersItem(new Server().url(serverUrl));
+        openApi
+                .addServersItem(new Server()
+                        .url(serverUrl)
+                        .description("Cloud deployment"))
+                .addServersItem(new Server()
+                        .url("http://localhost:8082")
+                        .description("Local Docker"));
 
         // Return the OpenAPI object with the configuration
         return openApi;

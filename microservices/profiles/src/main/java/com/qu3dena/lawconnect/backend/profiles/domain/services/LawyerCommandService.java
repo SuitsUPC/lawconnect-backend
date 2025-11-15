@@ -2,6 +2,7 @@ package com.qu3dena.lawconnect.backend.profiles.domain.services;
 
 import com.qu3dena.lawconnect.backend.profiles.domain.model.aggregates.LawyerAggregate;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.commands.CreateLawyerCommand;
+import com.qu3dena.lawconnect.backend.profiles.domain.model.commands.UpdateLawyerProfileCommand;
 import com.qu3dena.lawconnect.backend.profiles.domain.model.commands.UpdateLawyerSpecialtiesCommand;
 
 import java.util.Optional;
@@ -32,4 +33,12 @@ public interface LawyerCommandService {
      * @return an {@link Optional} containing the updated {@link LawyerAggregate}, or empty if update fails
      */
     Optional<LawyerAggregate> handle(UpdateLawyerSpecialtiesCommand command);
+
+    /**
+     * Handles updating the complete information of a lawyer profile.
+     *
+     * @param command the command containing the updated information
+     * @return an {@link Optional} containing the updated {@link LawyerAggregate}, or empty if update fails
+     */
+    Optional<LawyerAggregate> handle(UpdateLawyerProfileCommand command);
 }

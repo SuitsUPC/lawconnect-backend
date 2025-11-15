@@ -2,6 +2,7 @@ package com.qu3dena.lawconnect.backend.cases.interfaces.rest;
 
 import com.qu3dena.lawconnect.backend.cases.domain.model.commands.AcceptInvitationCommand;
 import com.qu3dena.lawconnect.backend.cases.domain.model.commands.RejectInvitationCommand;
+import com.qu3dena.lawconnect.backend.cases.domain.model.queries.GetInvitationsByCaseIdQuery;
 import com.qu3dena.lawconnect.backend.cases.domain.model.queries.GetInvitationsByLawyerIdQuery;
 import com.qu3dena.lawconnect.backend.cases.domain.services.InvitationCommandService;
 import com.qu3dena.lawconnect.backend.cases.domain.services.InvitationQueryService;
@@ -94,6 +95,26 @@ public class InvitationsController {
     public ResponseEntity<List<InvitationResource>> getInvitations(@RequestParam UUID lawyerId) {
         var list = invitationQueryService.handle(
                         new GetInvitationsByLawyerIdQuery(lawyerId)
+                ).stream().map(InvitationResourceFromEntityAssembler::toResourceFromEntity)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(list);
+    }
+
+    /**
+     * Retrieves all pending invitations for a given case.
+     *
+     * @param caseId the unique identifier of the case
+     * @return a ResponseEntity with a list of InvitationResource and HTTP status 200
+     */
+    @GetMapping("/case")
+    @Operation(summary = "Get invitations by case", description = "Retrieves all pending invitations sent for a specific case.")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Invitations retrieved successfully"),
+            @ApiResponse(responseCode = "404", description = "Case not found")
+    })
+    public ResponseEntity<List<InvitationResource>> getInvitationsByCase(@RequestParam UUID caseId) {
+        var list = invitationQueryService.handle(
+                        new GetInvitationsByCaseIdQuery(caseId)
                 ).stream().map(InvitationResourceFromEntityAssembler::toResourceFromEntity)
                 .collect(Collectors.toList());
         return ResponseEntity.ok(list);

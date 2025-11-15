@@ -1,6 +1,7 @@
 package com.qu3dena.lawconnect.backend.iam.application.internal.commandservices;
 
 import com.qu3dena.lawconnect.backend.iam.application.internal.outboundservices.hashing.HashingService;
+import com.qu3dena.lawconnect.backend.iam.application.internal.outboundservices.profiles.ProfileProvisioningService;
 import com.qu3dena.lawconnect.backend.iam.application.internal.outboundservices.tokens.TokenService;
 import com.qu3dena.lawconnect.backend.iam.domain.model.aggregates.UserAggregate;
 import com.qu3dena.lawconnect.backend.iam.domain.model.commands.SignInCommand;
@@ -34,6 +35,7 @@ public class UserCommandServiceImpl implements UserCommandService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final ApplicationEventPublisher events;
+    private final ProfileProvisioningService profileProvisioningService;
 
     /**
      * Creates a new instance of {@code UserCommandServiceImpl} with the required dependencies.
@@ -44,12 +46,18 @@ public class UserCommandServiceImpl implements UserCommandService {
      * @param hashingService service for password validation and hashing
      * @param events         publisher for application events
      */
-    public UserCommandServiceImpl(UserRepository userRepository, RoleRepository roleRepository, TokenService tokenService, HashingService hashingService, ApplicationEventPublisher events) {
+    public UserCommandServiceImpl(UserRepository userRepository,
+                                  RoleRepository roleRepository,
+                                  TokenService tokenService,
+                                  HashingService hashingService,
+                                  ApplicationEventPublisher events,
+                                  ProfileProvisioningService profileProvisioningService) {
         this.events = events;
         this.tokenService = tokenService;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.hashingService = hashingService;
+        this.profileProvisioningService = profileProvisioningService;
     }
 
     /**
@@ -70,6 +78,8 @@ public class UserCommandServiceImpl implements UserCommandService {
         var user = UserAggregate.create(command.username(), encoded, roleEntity);
 
         var saved = userRepository.save(user);
+
+        profileProvisioningService.provisionProfileFor(saved);
 
         var event = new UserRegisteredEvent(saved.getId());
 
