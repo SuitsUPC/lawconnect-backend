@@ -35,15 +35,44 @@ echo -e "   VM: ${GREEN}$VM_NAME${NC}"
 echo ""
 
 # Verificar si la VM existe
+VM_EXISTS=false
 if gcloud compute instances describe "$VM_NAME" --zone="$ZONE" >/dev/null 2>&1; then
-    echo -e "${YELLOW}⚠️  La VM ya existe. Eliminándola...${NC}"
-    gcloud compute instances delete "$VM_NAME" --zone="$ZONE" --quiet
-    sleep 5
-fi
-
-# Crear script de startup
-STARTUP_SCRIPT="/tmp/lawconnect-startup.sh"
-cat > "$STARTUP_SCRIPT" << 'EOF'
+    VM_EXISTS=true
+    echo -e "${BLUE}ℹ️  La VM ya existe. Limpiando disco y re-desplegando...${NC}"
+    
+    # Verificar estado de la VM
+    VM_STATUS=$(gcloud compute instances describe "$VM_NAME" --zone="$ZONE" --format="get(status)")
+    
+    if [ "$VM_STATUS" != "RUNNING" ]; then
+        echo -e "${BLUE}🔄 La VM está detenida. Iniciándola...${NC}"
+        gcloud compute instances start "$VM_NAME" --zone="$ZONE"
+        echo -e "${YELLOW}⏳ Esperando a que la VM esté lista (30 segundos)...${NC}"
+        sleep 30
+    fi
+    
+    # Obtener IP de la VM existente
+    VM_IP=$(gcloud compute instances describe "$VM_NAME" --zone="$ZONE" --format="get(networkInterfaces[0].accessConfigs[0].natIP)")
+    
+    # Detener servicios y limpiar /app
+    echo -e "${BLUE}🧹 Limpiando proyecto anterior...${NC}"
+    gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
+        # Detener servicios
+        cd /app 2>/dev/null || true
+        if [ -f stop.sh ]; then
+            bash stop.sh > /dev/null 2>&1 || true
+        fi
+        sudo docker compose -f microservices/docker-compose.yml down > /dev/null 2>&1 || true
+        sudo docker stop \$(sudo docker ps -aq) > /dev/null 2>&1 || true
+        
+        # Limpiar /app (solo archivos del proyecto, no configuraciones del sistema)
+        sudo rm -rf /app/* /app/.* 2>/dev/null || true
+        sudo mkdir -p /app
+        echo '✅ Disco limpiado'
+    " 2>/dev/null || echo "⚠️  No se pudo limpiar, continuando..."
+else
+    # Crear script de startup
+    STARTUP_SCRIPT="/tmp/lawconnect-startup.sh"
+    cat > "$STARTUP_SCRIPT" << 'EOF'
 #!/bin/bash
 set -e
 
@@ -79,33 +108,34 @@ chmod +x /usr/local/bin/docker-compose
 mkdir -p /app
 EOF
 
-# Crear VM con Ubuntu (tiene apt-get)
-echo -e "${BLUE}🖥️  Creando VM con Ubuntu y Docker...${NC}"
-gcloud compute instances create "$VM_NAME" \
-    --zone="$ZONE" \
-    --machine-type="$MACHINE_TYPE" \
-    --image-family=ubuntu-2204-lts \
-    --image-project=ubuntu-os-cloud \
-    --boot-disk-size=50GB \
-    --boot-disk-type=pd-standard \
-    --tags=http-server \
-    --metadata-from-file=startup-script="$STARTUP_SCRIPT"
+    # Crear VM con Ubuntu (tiene apt-get)
+    echo -e "${BLUE}🖥️  Creando VM con Ubuntu y Docker...${NC}"
+    gcloud compute instances create "$VM_NAME" \
+        --zone="$ZONE" \
+        --machine-type="$MACHINE_TYPE" \
+        --image-family=ubuntu-2204-lts \
+        --image-project=ubuntu-os-cloud \
+        --boot-disk-size=50GB \
+        --boot-disk-type=pd-standard \
+        --tags=http-server \
+        --metadata-from-file=startup-script="$STARTUP_SCRIPT"
 
-if [ $? -ne 0 ]; then
-    echo -e "${RED}❌ Error al crear la VM${NC}"
-    exit 1
-fi
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ Error al crear la VM${NC}"
+        exit 1
+    fi
 
-echo -e "${GREEN}✅ VM creada${NC}"
-echo -e "${YELLOW}⏳ Esperando a que la VM esté lista (60 segundos)...${NC}"
-sleep 60
+    echo -e "${GREEN}✅ VM creada${NC}"
+    echo -e "${YELLOW}⏳ Esperando a que la VM esté lista (60 segundos)...${NC}"
+    sleep 60
 
-# Obtener IP
-VM_IP=$(gcloud compute instances describe "$VM_NAME" --zone="$ZONE" --format="get(networkInterfaces[0].accessConfigs[0].natIP)")
+    # Obtener IP
+    VM_IP=$(gcloud compute instances describe "$VM_NAME" --zone="$ZONE" --format="get(networkInterfaces[0].accessConfigs[0].natIP)")
 
-if [ -z "$VM_IP" ]; then
-    echo -e "${RED}❌ No se pudo obtener la IP${NC}"
-    exit 1
+    if [ -z "$VM_IP" ]; then
+        echo -e "${RED}❌ No se pudo obtener la IP${NC}"
+        exit 1
+    fi
 fi
 
 echo -e "${GREEN}✅ VM IP: $VM_IP${NC}"
@@ -190,27 +220,177 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
     fi
 "
 
-# Ejecutar start.sh (ahora detecta automáticamente si necesita sudo)
+# Ejecutar start.sh y monitorear progreso
 echo -e "${BLUE}🚀 Ejecutando start.sh en la VM...${NC}"
 echo -e "${YELLOW}⚠️  Esto tardará varios minutos (compilación + Docker build)...${NC}"
+echo ""
 
+# Ejecutar start.sh en background y monitorear logs
 gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
     cd /app
     export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
     export PATH=\$PATH:\$JAVA_HOME/bin
     
-    # Ejecutar start.sh en background (ahora detecta automáticamente si necesita sudo)
-    bash start.sh > /tmp/lawconnect.log 2>&1 &
+    # Limpiar log anterior
+    > /tmp/lawconnect.log
+    
+    # Ejecutar start.sh en background
+    nohup bash start.sh > /tmp/lawconnect.log 2>&1 &
     START_PID=\$!
-    echo \"✅ start.sh ejecutado en segundo plano (PID: \$START_PID)\"
-    sleep 20
-    echo ''
-    echo '📋 Últimas líneas del log:'
-    tail -50 /tmp/lawconnect.log || echo 'Log aún no disponible, espera unos segundos...'
-    echo ''
-    echo '📊 Verificando procesos:'
-    ps aux | grep -E '(start.sh|mvn|docker)' | grep -v grep | head -5 || echo 'Procesos aún iniciando...'
-"
+    echo \"START_PID=\$START_PID\" > /tmp/start_pid.txt
+    echo \"✅ start.sh iniciado (PID: \$START_PID)\"
+" 2>/dev/null
+
+# Monitorear logs en tiempo real
+echo -e "${BLUE}📋 Monitoreando logs de start.sh (presiona Ctrl+C para detener el monitoreo, el proceso continuará)...${NC}"
+echo ""
+
+# Función para mostrar logs
+show_logs() {
+    gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
+        if [ -f /tmp/lawconnect.log ]; then
+            tail -20 /tmp/lawconnect.log 2>/dev/null
+        else
+            echo 'Log aún no disponible...'
+        fi
+    " 2>/dev/null
+}
+
+# Mostrar logs cada 15 segundos durante 5 minutos o hasta que termine
+LOG_MONITOR_TIME=300  # 5 minutos
+LOG_ELAPSED=0
+LOG_INTERVAL=15
+
+while [ $LOG_ELAPSED -lt $LOG_MONITOR_TIME ]; do
+    # Verificar si start.sh terminó
+    IS_RUNNING=$(gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
+        if [ -f /tmp/start_pid.txt ]; then
+            source /tmp/start_pid.txt
+            if ps -p \$START_PID > /dev/null 2>&1; then
+                echo 'RUNNING'
+            else
+                echo 'FINISHED'
+            fi
+        else
+            echo 'UNKNOWN'
+        fi
+    " 2>/dev/null | grep -o "FINISHED")
+    
+    if [ "$IS_RUNNING" = "FINISHED" ]; then
+        echo -e "${GREEN}✅ start.sh terminó${NC}"
+        echo ""
+        show_logs
+        break
+    fi
+    
+    # Mostrar logs cada intervalo
+    show_logs
+    echo ""
+    echo -e "${YELLOW}⏳ Esperando... (${LOG_ELAPSED}s / ${LOG_MONITOR_TIME}s) - start.sh aún ejecutándose...${NC}"
+    echo ""
+    
+    sleep $LOG_INTERVAL
+    LOG_ELAPSED=$((LOG_ELAPSED + LOG_INTERVAL))
+done
+
+# Mostrar logs finales
+echo ""
+echo -e "${BLUE}📋 Logs finales de start.sh:${NC}"
+show_logs
+echo ""
+
+# Verificar si start.sh terminó correctamente y esperar a que los servicios estén listos
+echo ""
+echo -e "${BLUE}⏳ Esperando a que los servicios estén listos...${NC}"
+echo ""
+
+# Función para verificar si los servicios están listos
+check_services_ready() {
+    gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
+        cd /app
+        export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+        export PATH=\$PATH:\$JAVA_HOME/bin
+        
+        # Detectar comando de Docker
+        DOCKER_CMD=\"docker\"
+        if ! docker info > /dev/null 2>&1; then
+            if sudo docker info > /dev/null 2>&1; then
+                DOCKER_CMD=\"sudo docker\"
+            fi
+        fi
+        
+        # Verificar que los contenedores estén corriendo
+        CONTAINERS=\$(\$DOCKER_CMD ps --filter \"name=iam-service\|profiles-service\|cases-service\|api-gateway\" --format \"{{.Names}}\" 2>/dev/null | wc -l)
+        
+        if [ \"\$CONTAINERS\" -ge 4 ]; then
+            # Verificar que el API Gateway responda
+            sleep 5
+            HTTP_CODE=\$(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:8080/actuator/health 2>/dev/null || echo \"000\")
+            if [ \"\$HTTP_CODE\" = \"200\" ] || [ \"\$HTTP_CODE\" = \"404\" ]; then
+                echo \"READY\"
+                exit 0
+            fi
+        fi
+        echo \"NOT_READY\"
+        exit 1
+    " 2>/dev/null | grep -q "READY"
+}
+
+# Esperar hasta 10 minutos para que los servicios estén listos
+MAX_WAIT=600  # 10 minutos
+ELAPSED=0
+INTERVAL=10
+
+while [ $ELAPSED -lt $MAX_WAIT ]; do
+    if check_services_ready; then
+        echo -e "${GREEN}✅ Servicios listos!${NC}"
+        break
+    fi
+    
+    # Mostrar progreso cada 30 segundos
+    if [ $((ELAPSED % 30)) -eq 0 ]; then
+        echo -e "${YELLOW}⏳ Esperando servicios... (${ELAPSED}s / ${MAX_WAIT}s)${NC}"
+        # Mostrar estado de contenedores
+        gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
+            cd /app
+            DOCKER_CMD=\"docker\"
+            if ! docker info > /dev/null 2>&1; then
+                if sudo docker info > /dev/null 2>&1; then
+                    DOCKER_CMD=\"sudo docker\"
+                fi
+            fi
+            echo '📊 Estado de contenedores:'
+            \$DOCKER_CMD ps --filter \"name=iam-service\|profiles-service\|cases-service\|api-gateway\" --format \"table {{.Names}}\\t{{.Status}}\" 2>/dev/null || echo 'Docker no disponible'
+        " 2>/dev/null | tail -5
+    fi
+    
+    sleep $INTERVAL
+    ELAPSED=$((ELAPSED + INTERVAL))
+done
+
+if [ $ELAPSED -ge $MAX_WAIT ]; then
+    echo -e "${YELLOW}⚠️  Tiempo de espera agotado. Los servicios pueden estar aún iniciando.${NC}"
+fi
+
+# Mostrar logs finales
+echo ""
+echo -e "${BLUE}📋 Últimas líneas del log de start.sh:${NC}"
+gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="tail -30 /tmp/lawconnect.log 2>/dev/null || echo 'Log no disponible'" 2>/dev/null
+echo ""
+
+# Mostrar estado final de servicios
+echo -e "${BLUE}📊 Estado final de servicios:${NC}"
+gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
+    cd /app
+    DOCKER_CMD=\"docker\"
+    if ! docker info > /dev/null 2>&1; then
+        if sudo docker info > /dev/null 2>&1; then
+            DOCKER_CMD=\"sudo docker\"
+        fi
+    fi
+    \$DOCKER_CMD ps --filter \"name=iam-service\|profiles-service\|cases-service\|api-gateway\" --format \"table {{.Names}}\\t{{.Status}}\\t{{.Ports}}\" 2>/dev/null || echo 'No se pudo obtener estado'
+" 2>/dev/null
+echo ""
 
 # Instalar y configurar Cloudflare Tunnel
 echo ""
@@ -480,8 +660,11 @@ fi
 echo -e "${GREEN}🔄 AUTO-START CONFIGURADO:${NC}"
 echo -e "   ✅ Si apagas la VM y la vuelves a encender, todo se levantará automáticamente"
 echo -e "   ✅ Docker, servicios y Cloudflare Tunnel se iniciarán solos"
-echo -e "   ✅ El proyecto se actualizará desde GitHub automáticamente"
 echo -e "   ✅ La nueva URL del tunnel se guardará en /tmp/tunnel_url.txt"
+echo ""
+echo -e "${BLUE}💡 TIP:${NC}"
+echo -e "   • Para re-desplegar con cambios del repo, solo ejecuta este script de nuevo"
+echo -e "   • El script limpiará /app y clonará la versión más reciente (no borra la VM)"
 echo ""
 
 echo -e "${BLUE}🌐 URLs locales (solo para pruebas):${NC}"
