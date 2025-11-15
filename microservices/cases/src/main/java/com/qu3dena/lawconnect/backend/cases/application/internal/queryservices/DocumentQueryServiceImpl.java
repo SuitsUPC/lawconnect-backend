@@ -7,6 +7,8 @@ import com.qu3dena.lawconnect.backend.cases.infrastructure.persistence.jpa.repos
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class DocumentQueryServiceImpl implements DocumentQueryService {
@@ -20,6 +22,11 @@ public class DocumentQueryServiceImpl implements DocumentQueryService {
     @Override
     public List<Document> handle(GetDocumentsByCaseIdQuery query) {
         return documentRepository.findByCaseIdOrderByUploadedAtDesc(query.caseId());
+    }
+
+    @Override
+    public Optional<Document> findByCaseIdAndFileUrl(UUID caseId, String fileUrl) {
+        return documentRepository.findByCaseIdAndFileUrl(caseId, fileUrl);
     }
 }
 

@@ -11,5 +11,6 @@ import java.util.UUID;
 public interface DocumentRepository extends JpaRepository<Document, UUID> {
     List<Document> findByCaseIdOrderByUploadedAtDesc(UUID caseId);
     void deleteByCaseId(UUID caseId);
+    java.util.Optional<Document> findByCaseIdAndFileUrl(UUID caseId, String fileUrl);
 }
 
