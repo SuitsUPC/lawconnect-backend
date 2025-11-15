@@ -23,14 +23,20 @@ spring:
           predicates:
             - Path=/iam/swagger-ui/**
           filters:
-            - RewritePath=/iam/(?<segment>.*), /$\{segment}
+            - RewritePath=/iam/(?<segment>.*), /$${segment}
         
         - id: iam-api-docs
           uri: http://iam-service:8081
           predicates:
+            - Path=/iam/v3/api-docs
+          filters:
+            - RewritePath=/iam/v3/api-docs, /api-docs
+        - id: iam-api-docs-sub
+          uri: http://iam-service:8081
+          predicates:
             - Path=/iam/v3/api-docs/**
           filters:
-            - RewritePath=/iam/(?<segment>.*), /$\{segment}
+            - RewritePath=/iam/v3/api-docs/(?<segment>.*), /api-docs/$${segment}
         
         # Profiles Service Routes
         - id: profiles-service
@@ -51,14 +57,20 @@ spring:
           predicates:
             - Path=/profiles/swagger-ui/**
           filters:
-            - RewritePath=/profiles/(?<segment>.*), /$\{segment}
+            - RewritePath=/profiles/(?<segment>.*), /$${segment}
         
         - id: profiles-api-docs
           uri: http://profiles-service:8082
           predicates:
+            - Path=/profiles/v3/api-docs
+          filters:
+            - RewritePath=/profiles/v3/api-docs, /api-docs
+        - id: profiles-api-docs-sub
+          uri: http://profiles-service:8082
+          predicates:
             - Path=/profiles/v3/api-docs/**
           filters:
-            - RewritePath=/profiles/(?<segment>.*), /$\{segment}
+            - RewritePath=/profiles/v3/api-docs/(?<segment>.*), /api-docs/$${segment}
         
         # Cases Service Routes
         - id: cases-service
@@ -79,21 +91,36 @@ spring:
           predicates:
             - Path=/cases/swagger-ui/**
           filters:
-            - RewritePath=/cases/(?<segment>.*), /$\{segment}
+            - RewritePath=/cases/(?<segment>.*), /$${segment}
         
         - id: cases-api-docs
           uri: http://cases-service:8083
           predicates:
+            - Path=/cases/v3/api-docs
+          filters:
+            - RewritePath=/cases/v3/api-docs, /api-docs
+        - id: cases-api-docs-sub
+          uri: http://cases-service:8083
+          predicates:
             - Path=/cases/v3/api-docs/**
           filters:
-            - RewritePath=/cases/(?<segment>.*), /$\{segment}
+            - RewritePath=/cases/v3/api-docs/(?<segment>.*), /api-docs/$${segment}
 
 server:
   port: 8080
 
-# Swagger UI deshabilitado en el Gateway
-# Accede directamente a cada servicio:
-# - IAM: http://localhost:8080/iam/swagger-ui.html
-# - Profiles: http://localhost:8080/profiles/swagger-ui.html
-# - Cases: http://localhost:8080/cases/swagger-ui.html
+# Swagger UI Configuration
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    urls:
+      - name: IAM Service
+        url: /iam/v3/api-docs
+      - name: Profiles Service
+        url: /profiles/v3/api-docs
+      - name: Cases Service
+        url: /cases/v3/api-docs
+    urls-primary-name: IAM Service
 
