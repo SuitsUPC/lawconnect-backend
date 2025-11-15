@@ -225,6 +225,30 @@ echo -e "${BLUE}🚀 Ejecutando start.sh en la VM...${NC}"
 echo -e "${YELLOW}⚠️  Esto tardará varios minutos (compilación + Docker build)...${NC}"
 echo ""
 
+# Verificar Java y Maven antes de ejecutar start.sh
+echo -e "${BLUE}🔍 Verificando Java y Maven antes de compilar...${NC}"
+gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
+    cd /app
+    export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+    export PATH=\$PATH:\$JAVA_HOME/bin
+    
+    echo 'Verificando Java:'
+    java -version 2>&1 | head -3 || echo '❌ Java no funciona'
+    echo ''
+    echo 'Verificando JAVA_HOME:'
+    echo \"JAVA_HOME=\$JAVA_HOME\"
+    echo \"PATH=\$PATH\"
+    echo ''
+    echo 'Verificando Maven wrapper:'
+    if [ -f mvnw ]; then
+        ls -lh mvnw
+        bash mvnw --version 2>&1 | head -5 || echo '❌ Maven wrapper no funciona'
+    else
+        echo '❌ mvnw no encontrado'
+    fi
+" 2>/dev/null
+echo ""
+
 # Ejecutar start.sh en background y monitorear logs
 gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
     cd /app
@@ -355,19 +379,34 @@ echo "$JAR_CHECK"
 if echo "$JAR_CHECK" | grep -q "JARS_MISSING"; then
     echo ""
     echo -e "${RED}❌ ERROR: Algunos JARs no se compilaron correctamente.${NC}"
-    echo -e "${YELLOW}📋 Revisando logs de compilación...${NC}"
+    echo -e "${YELLOW}📋 Revisando logs de compilación detallados...${NC}"
     gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
         echo '📋 Buscando errores de compilación en el log:'
-        grep -iE '(BUILD FAILURE|COMPILATION ERROR|mvn.*failed)' /tmp/lawconnect.log | tail -10 || echo 'No se encontraron errores específicos de Maven'
+        grep -iE '(BUILD FAILURE|COMPILATION ERROR|mvn.*failed|ERROR|Exception)' /tmp/lawconnect.log | tail -20 || echo 'No se encontraron errores específicos'
         echo ''
-        echo '📋 Últimas líneas del log relacionadas con compilación:'
-        grep -A 5 -B 5 -iE '(compilando|building|mvn)' /tmp/lawconnect.log | tail -20
+        echo '📋 Últimas 50 líneas del log completo:'
+        tail -50 /tmp/lawconnect.log
+        echo ''
+        echo '📋 Verificando si hay archivos de compilación:'
+        find /app/microservices -name '*.jar' -type f 2>/dev/null | head -10 || echo 'No se encontraron JARs'
+        echo ''
+        echo '📋 Verificando directorios target:'
+        for service in iam profiles cases api-gateway; do
+            if [ -d \"/app/microservices/\${service}/target\" ]; then
+                echo \"  ✅ \${service}/target existe\"
+                ls -la /app/microservices/\${service}/target/*.jar 2>/dev/null | head -3 || echo \"    ❌ No hay JARs en \${service}/target\"
+            else
+                echo \"  ❌ \${service}/target NO existe\"
+            fi
+        done
     " 2>/dev/null
     echo ""
     echo -e "${YELLOW}💡 Solución:${NC}"
     echo -e "   1. Revisa los logs de compilación arriba"
     echo -e "   2. Verifica que Java y Maven estén instalados correctamente"
-    echo -e "   3. Intenta ejecutar start.sh manualmente en la VM para ver más detalles"
+    echo -e "   3. Intenta compilar manualmente en la VM:"
+    echo -e "      ${BLUE}gcloud compute ssh $VM_NAME --zone=$ZONE${NC}"
+    echo -e "      ${BLUE}cd /app/microservices/iam && bash ../../mvnw clean package -DskipTests${NC}"
     echo ""
     JARS_MISSING=true
 fi
