@@ -41,17 +41,22 @@ public class Document {
     @Column(name = "file_type")
     private String fileType;
 
+    @Lob
+    @Column(name = "file_content", columnDefinition = "LONGBLOB")
+    private byte[] fileContent;
+
     @CreatedDate
     @Column(name = "uploaded_at", nullable = false, updatable = false)
     private LocalDateTime uploadedAt;
 
-    public Document(UUID caseId, UUID uploadedBy, String filename, String fileUrl, Long fileSize, String fileType) {
+    public Document(UUID caseId, UUID uploadedBy, String filename, String fileUrl, Long fileSize, String fileType, byte[] fileContent) {
         this.caseId = caseId;
         this.uploadedBy = uploadedBy;
         this.filename = filename;
         this.fileUrl = fileUrl;
         this.fileSize = fileSize;
         this.fileType = fileType;
+        this.fileContent = fileContent;
     }
 }
 

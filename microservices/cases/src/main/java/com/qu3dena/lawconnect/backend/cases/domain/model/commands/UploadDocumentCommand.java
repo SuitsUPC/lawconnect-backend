@@ -8,7 +8,8 @@ public record UploadDocumentCommand(
         String filename,
         String fileUrl,
         Long fileSize,
-        String fileType
+        String fileType,
+        byte[] fileContent
 ) {
 }
 

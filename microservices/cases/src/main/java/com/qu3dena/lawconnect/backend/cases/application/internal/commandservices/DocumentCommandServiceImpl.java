@@ -27,7 +27,8 @@ public class DocumentCommandServiceImpl implements DocumentCommandService {
                 command.filename(),
                 command.fileUrl(),
                 command.fileSize(),
-                command.fileType()
+                command.fileType(),
+                command.fileContent()
         );
 
         var saved = documentRepository.save(document);

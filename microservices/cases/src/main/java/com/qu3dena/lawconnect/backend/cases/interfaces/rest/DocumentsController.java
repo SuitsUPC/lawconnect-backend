@@ -13,6 +13,7 @@ import com.qu3dena.lawconnect.backend.cases.interfaces.rest.resources.UploadDocu
 import com.qu3dena.lawconnect.backend.cases.interfaces.rest.transform.DocumentResourceFromEntityAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -26,7 +27,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -96,26 +97,17 @@ public class DocumentsController {
                 return ResponseEntity.badRequest().build();
             }
 
-            // Crear directorio de almacenamiento si no existe
-            String uploadDir = System.getProperty("user.home") + "/lawconnect-documents";
-            Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
             // Generar nombre único para el archivo
             String originalFilename = file.getOriginalFilename();
             String fileExtension = originalFilename != null && originalFilename.contains(".") 
                 ? originalFilename.substring(originalFilename.lastIndexOf(".")) 
                 : "";
             String uniqueFilename = UUID.randomUUID().toString() + fileExtension;
-            Path filePath = uploadPath.resolve(uniqueFilename);
-
-            // Guardar archivo
-            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
             // Crear URL del archivo para descarga
             String fileUrl = "/api/v1/cases/" + caseId + "/documents/download/" + uniqueFilename;
+
+            byte[] fileContent = file.getBytes();
 
             // Crear comando para guardar en BD
             var command = new UploadDocumentCommand(
@@ -124,14 +116,13 @@ public class DocumentsController {
                     originalFilename != null ? originalFilename : "document",
                     fileUrl,
                     file.getSize(),
-                    contentType != null ? contentType : "application/octet-stream"
+                    contentType != null ? contentType : "application/octet-stream",
+                    fileContent
             );
 
             var document = commandService.handle(command);
 
             if (document.isEmpty()) {
-                // Si falla guardar en BD, eliminar archivo
-                Files.deleteIfExists(filePath);
                 return ResponseEntity.badRequest().build();
             }
 
@@ -172,13 +163,34 @@ public class DocumentsController {
                     .build();
         }
         
+        String storedFileUrl = resource.fileUrl();
+        byte[] fileContent = null;
+        String filename = resource.filename() != null ? resource.filename() : "document";
+        String contentType = resource.fileType();
+
+        if (storedFileUrl != null && storedFileUrl.startsWith("data:")) {
+            int commaIndex = storedFileUrl.indexOf(',');
+            if (commaIndex != -1 && commaIndex + 1 < storedFileUrl.length()) {
+                String base64Data = storedFileUrl.substring(commaIndex + 1);
+                fileContent = Base64.getDecoder().decode(base64Data);
+            }
+            String extension = "";
+            if (filename.contains(".")) {
+                extension = filename.substring(filename.lastIndexOf("."));
+            }
+            String uniqueFilename = UUID.randomUUID().toString() + extension;
+            storedFileUrl = "/api/v1/cases/" + caseId + "/documents/download/" + uniqueFilename;
+            filename = filename;
+        }
+
         var command = new UploadDocumentCommand(
                 UUID.fromString(caseId),
                 UUID.fromString(uploadedBy),
-                resource.filename(),
-                resource.fileUrl(),
+                filename,
+                storedFileUrl,
                 resource.fileSize(),
-                resource.fileType()
+                contentType,
+                fileContent
         );
 
         var document = commandService.handle(command);
@@ -210,6 +222,18 @@ public class DocumentsController {
             @PathVariable String filename
     ) {
         try {
+            String targetFileUrl = "/api/v1/cases/" + caseId + "/documents/download/" + filename;
+            var documentOptional = queryService.findByCaseIdAndFileUrl(UUID.fromString(caseId), targetFileUrl);
+            if (documentOptional.isPresent() && documentOptional.get().getFileContent() != null) {
+                var document = documentOptional.get();
+                var resource = new ByteArrayResource(document.getFileContent());
+                String contentType = document.getFileType() != null ? document.getFileType() : "application/octet-stream";
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + document.getFilename() + "\"")
+                        .body(resource);
+            }
+
             String uploadDir = System.getProperty("user.home") + "/lawconnect-documents";
             Path filePath = Paths.get(uploadDir).resolve(filename).normalize();
             Resource resource = new UrlResource(filePath.toUri());
