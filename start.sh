@@ -114,14 +114,13 @@ compile_service() {
     COMPILE_LOG="/tmp/compile_${service_name}.log"
     if $MVN_CMD clean package spring-boot:repackage -DskipTests > "$COMPILE_LOG" 2>&1; then
         echo -e "${GREEN}✅ ${service_name} compilado correctamente${NC}"
-        # Verificar que el JAR existe
-        JAR_FILE="$PROJECT_ROOT/$service_path/target/${service_name,,}-service-0.0.1-SNAPSHOT.jar"
-        # Convertir service_name a lowercase para el nombre del JAR
+        # Verificar que el JAR existe - Convertir service_name a lowercase para el nombre del JAR
         case "$service_name" in
             "IAM Service") JAR_FILE="$PROJECT_ROOT/$service_path/target/iam-service-0.0.1-SNAPSHOT.jar" ;;
             "Profiles Service") JAR_FILE="$PROJECT_ROOT/$service_path/target/profiles-service-0.0.1-SNAPSHOT.jar" ;;
             "Cases Service") JAR_FILE="$PROJECT_ROOT/$service_path/target/cases-service-0.0.1-SNAPSHOT.jar" ;;
             "API Gateway") JAR_FILE="$PROJECT_ROOT/$service_path/target/api-gateway-0.0.1-SNAPSHOT.jar" ;;
+            *) JAR_FILE="" ;;
         esac
         
         if [ -f "$JAR_FILE" ]; then
