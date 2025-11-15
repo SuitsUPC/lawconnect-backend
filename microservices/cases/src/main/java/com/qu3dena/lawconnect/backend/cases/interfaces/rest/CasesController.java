@@ -92,7 +92,7 @@ public class CasesController {
             @ApiResponse(responseCode = "200", description = "Case closed successfully"),
             @ApiResponse(responseCode = "404", description = "Case not found")
     })
-    public ResponseEntity<CaseResource> closeCase(@PathVariable("caseId") UUID caseId, @RequestParam UUID clientId) {
+    public ResponseEntity<CaseResource> closeCase(@PathVariable("caseId") UUID caseId, @RequestParam("clientId") UUID clientId) {
 
         try {
             var command = new CloseCaseCommand(caseId, clientId);
@@ -130,7 +130,7 @@ public class CasesController {
             @ApiResponse(responseCode = "200", description = "Case canceled successfully"),
             @ApiResponse(responseCode = "404", description = "Case not found")
     })
-    public ResponseEntity<CaseResource> cancelCase(@PathVariable("caseId") UUID caseId, @RequestParam UUID clientId) {
+    public ResponseEntity<CaseResource> cancelCase(@PathVariable("caseId") UUID caseId, @RequestParam("clientId") UUID clientId) {
         var command = new CancelCaseCommand(caseId, clientId);
 
         var canceled = caseCommandService.handle(command)
@@ -207,7 +207,7 @@ public class CasesController {
             @ApiResponse(responseCode = "200", description = "Suggested cases retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Lawyer not found")
     })
-    public ResponseEntity<List<CaseResource>> getSuggestedCases(@RequestParam UUID lawyerId) {
+    public ResponseEntity<List<CaseResource>> getSuggestedCases(@RequestParam("lawyerId") UUID lawyerId) {
         var list = caseQueryService.handle(new GetSuggestedCasesQuery(lawyerId))
                 .stream().map(CaseResourceFromEntityAssembler::toResourceFromEntity)
                 .collect(Collectors.toList());
@@ -227,7 +227,7 @@ public class CasesController {
             @ApiResponse(responseCode = "200", description = "Cases retrieved successfully"),
             @ApiResponse(responseCode = "400", description = "Invalid status")
     })
-    public ResponseEntity<List<CaseResource>> getCasesByStatus(@RequestParam String status) {
+    public ResponseEntity<List<CaseResource>> getCasesByStatus(@RequestParam("status") String status) {
         var list = caseQueryService.handle(new GetCasesByStatusQuery(CaseStatus.valueOf(status)))
                 .stream().map(CaseResourceFromEntityAssembler::toResourceFromEntity)
                 .collect(Collectors.toList());

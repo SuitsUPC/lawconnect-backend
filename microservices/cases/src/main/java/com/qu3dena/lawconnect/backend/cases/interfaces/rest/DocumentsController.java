@@ -51,7 +51,7 @@ public class DocumentsController {
     @Operation(summary = "Upload file to case")
     public ResponseEntity<DocumentResource> uploadDocumentFile(
             @PathVariable("caseId") String caseId,
-            @RequestParam String uploadedBy,
+            @RequestParam("uploadedBy") String uploadedBy,
             @RequestParam("file") MultipartFile file
     ) {
         try {
@@ -139,7 +139,7 @@ public class DocumentsController {
     @Operation(summary = "Upload document metadata to case")
     public ResponseEntity<DocumentResource> uploadDocument(
             @PathVariable("caseId") String caseId,
-            @RequestParam String uploadedBy,
+            @RequestParam("uploadedBy") String uploadedBy,
             @RequestBody UploadDocumentResource resource
     ) {
         // Validar que el caso existe y permite subir archivos

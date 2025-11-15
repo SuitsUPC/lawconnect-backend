@@ -231,8 +231,9 @@ test_endpoint "GET" "${BASE_URL}/api/v1/clients" "GET /api/v1/clients - Listar t
 if [ ! -z "$CLIENT_USER_ID" ]; then
     test_endpoint "GET" "${BASE_URL}/api/v1/clients/${CLIENT_USER_ID}" "GET /api/v1/clients/{userId} - Obtener perfil CLIENT" "" "true"
     
-    # 12. PUT /api/v1/clients/{userId} - Usar DNI único basado en timestamp
-    UNIQUE_DNI="$(date +%s | tail -c 8)A"
+    # 12. PUT /api/v1/clients/{userId} - Usar DNI único basado en timestamp (8 dígitos, formato peruano)
+    TIMESTAMP=$(date +%s)
+    UNIQUE_DNI="$(printf "%08d" $((TIMESTAMP % 100000000)))"
     update_data="{\"firstname\":\"Juan\",\"lastname\":\"Pérez\",\"dni\":\"${UNIQUE_DNI}\",\"contactInfo\":{\"phoneNumber\":\"+51987654321\",\"address\":\"Av. Principal 123\"}}"
     test_endpoint "PUT" "${BASE_URL}/api/v1/clients/${CLIENT_USER_ID}" "PUT /api/v1/clients/{userId} - Actualizar perfil CLIENT" "$update_data" "true" "200"
 fi
@@ -256,8 +257,9 @@ test_endpoint "GET" "${BASE_URL}/api/v1/lawyers" "GET /api/v1/lawyers - Listar t
 if [ ! -z "$LAWYER_USER_ID" ]; then
     test_endpoint "GET" "${BASE_URL}/api/v1/lawyers/${LAWYER_USER_ID}" "GET /api/v1/lawyers/{userId} - Obtener perfil LAWYER" "" "true"
     
-    # 16. PUT /api/v1/lawyers/{userId} - Usar DNI único basado en timestamp
-    UNIQUE_DNI_LAWYER="$(date +%s | tail -c 8)B"
+    # 16. PUT /api/v1/lawyers/{userId} - Usar DNI único basado en timestamp (8 dígitos, formato peruano)
+    TIMESTAMP_LAWYER=$(date +%s)
+    UNIQUE_DNI_LAWYER="$(printf "%08d" $((TIMESTAMP_LAWYER % 100000000)))"
     update_data="{\"firstname\":\"María\",\"lastname\":\"González\",\"dni\":\"${UNIQUE_DNI_LAWYER}\",\"contactInfo\":{\"phoneNumber\":\"+51912345678\",\"address\":\"Calle Secundaria 456\"},\"description\":\"Abogada especializada\"}"
     test_endpoint "PUT" "${BASE_URL}/api/v1/lawyers/${LAWYER_USER_ID}" "PUT /api/v1/lawyers/{userId} - Actualizar perfil LAWYER" "$update_data" "true" "200"
 fi

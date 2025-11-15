@@ -123,11 +123,10 @@ public class ProfileProvisioningService {
     }
 
     private String generatePlaceholderDni(UUID userId) {
+        // Genera un DNI de 8 dígitos (formato peruano, sin letra)
         var hash = Math.abs(userId.getMostSignificantBits() ^ userId.getLeastSignificantBits());
         var numeric = hash % 100_000_000L;
-        var digits = String.format("%08d", numeric);
-        char letter = (char) ('A' + (hash % 26));
-        return digits + letter;
+        return String.format("%08d", numeric);
     }
 
     private record ContactInfoPayload(String phoneNumber, String address) {

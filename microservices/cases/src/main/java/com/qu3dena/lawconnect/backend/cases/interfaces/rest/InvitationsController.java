@@ -92,7 +92,7 @@ public class InvitationsController {
             @ApiResponse(responseCode = "200", description = "Invitations retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Lawyer not found")
     })
-    public ResponseEntity<List<InvitationResource>> getInvitations(@RequestParam UUID lawyerId) {
+    public ResponseEntity<List<InvitationResource>> getInvitations(@RequestParam("lawyerId") UUID lawyerId) {
         var list = invitationQueryService.handle(
                         new GetInvitationsByLawyerIdQuery(lawyerId)
                 ).stream().map(InvitationResourceFromEntityAssembler::toResourceFromEntity)
@@ -112,7 +112,7 @@ public class InvitationsController {
             @ApiResponse(responseCode = "200", description = "Invitations retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Case not found")
     })
-    public ResponseEntity<List<InvitationResource>> getInvitationsByCase(@RequestParam UUID caseId) {
+    public ResponseEntity<List<InvitationResource>> getInvitationsByCase(@RequestParam("caseId") UUID caseId) {
         var list = invitationQueryService.handle(
                         new GetInvitationsByCaseIdQuery(caseId)
                 ).stream().map(InvitationResourceFromEntityAssembler::toResourceFromEntity)
@@ -135,7 +135,7 @@ public class InvitationsController {
     })
     public ResponseEntity<InvitationResource> acceptInvitation(
             @PathVariable("invitationId") Long invitationId,
-            @RequestParam UUID lawyerId
+            @RequestParam("lawyerId") UUID lawyerId
     ) {
         var command = new AcceptInvitationCommand(invitationId, lawyerId);
         var updated = invitationCommandService.handle(command)
@@ -160,7 +160,7 @@ public class InvitationsController {
     })
     public ResponseEntity<InvitationResource> rejectInvitation(
             @PathVariable("invitationId") Long invitationId,
-            @RequestParam UUID lawyerId
+            @RequestParam("lawyerId") UUID lawyerId
     ) {
         var command = new RejectInvitationCommand(invitationId, lawyerId);
         var updated = invitationCommandService.handle(command)

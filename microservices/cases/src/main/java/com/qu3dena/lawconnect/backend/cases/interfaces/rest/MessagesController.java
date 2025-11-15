@@ -35,7 +35,7 @@ public class MessagesController {
     @Operation(summary = "Send message in case")
     public ResponseEntity<MessageResource> sendMessage(
             @PathVariable("caseId") String caseId,
-            @RequestParam String senderId,
+            @RequestParam("senderId") String senderId,
             @RequestBody SendMessageResource resource
     ) {
         var command = new SendMessageCommand(
