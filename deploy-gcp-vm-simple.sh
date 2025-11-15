@@ -249,11 +249,28 @@ echo ""
 show_logs() {
     gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
         if [ -f /tmp/lawconnect.log ]; then
-            tail -20 /tmp/lawconnect.log 2>/dev/null
+            # Mostrar últimas 30 líneas, pero si hay errores, mostrar más contexto
+            tail -50 /tmp/lawconnect.log 2>/dev/null | tail -30
         else
             echo 'Log aún no disponible...'
         fi
     " 2>/dev/null
+}
+
+# Función para verificar si hay errores en los logs
+check_for_errors() {
+    gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
+        if [ -f /tmp/lawconnect.log ]; then
+            # Buscar errores comunes
+            if grep -iE '(error|failed|exception|not found)' /tmp/lawconnect.log | tail -5; then
+                echo 'ERRORS_FOUND'
+            else
+                echo 'NO_ERRORS'
+            fi
+        else
+            echo 'NO_LOG'
+        fi
+    " 2>/dev/null | grep -q "ERRORS_FOUND"
 }
 
 # Mostrar logs cada 15 segundos durante 5 minutos o hasta que termine
@@ -286,6 +303,17 @@ while [ $LOG_ELAPSED -lt $LOG_MONITOR_TIME ]; do
     # Mostrar logs cada intervalo
     show_logs
     echo ""
+    
+    # Verificar si hay errores
+    if check_for_errors; then
+        echo -e "${RED}⚠️  Se detectaron errores en los logs. Mostrando más detalles...${NC}"
+        gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
+            echo '📋 Últimas líneas con errores:'
+            grep -iE '(error|failed|exception|not found)' /tmp/lawconnect.log | tail -10
+        " 2>/dev/null
+        echo ""
+    fi
+    
     echo -e "${YELLOW}⏳ Esperando... (${LOG_ELAPSED}s / ${LOG_MONITOR_TIME}s) - start.sh aún ejecutándose...${NC}"
     echo ""
     
@@ -293,11 +321,64 @@ while [ $LOG_ELAPSED -lt $LOG_MONITOR_TIME ]; do
     LOG_ELAPSED=$((LOG_ELAPSED + LOG_INTERVAL))
 done
 
-# Mostrar logs finales
+# Mostrar logs finales y verificar compilación
 echo ""
 echo -e "${BLUE}📋 Logs finales de start.sh:${NC}"
 show_logs
 echo ""
+
+# Verificar que los JARs se compilaron correctamente
+echo -e "${BLUE}🔍 Verificando que los JARs se compilaron correctamente...${NC}"
+JARS_MISSING=false
+JAR_CHECK=$(gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
+    cd /app
+    MISSING=0
+    echo 'Verificando JARs compilados:'
+    for service in iam profiles cases api-gateway; do
+        JAR_PATH=\"microservices/\${service}/target/\${service}-service-0.0.1-SNAPSHOT.jar\"
+        if [ -f \"\$JAR_PATH\" ]; then
+            echo \"  ✅ \${service}: \$(du -h \$JAR_PATH | cut -f1)\"
+        else
+            echo \"  ❌ \${service}: NO ENCONTRADO\"
+            MISSING=1
+        fi
+    done
+    if [ \$MISSING -eq 1 ]; then
+        echo 'JARS_MISSING'
+    else
+        echo 'JARS_OK'
+    fi
+" 2>/dev/null)
+
+echo "$JAR_CHECK"
+
+if echo "$JAR_CHECK" | grep -q "JARS_MISSING"; then
+    echo ""
+    echo -e "${RED}❌ ERROR: Algunos JARs no se compilaron correctamente.${NC}"
+    echo -e "${YELLOW}📋 Revisando logs de compilación...${NC}"
+    gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
+        echo '📋 Buscando errores de compilación en el log:'
+        grep -iE '(BUILD FAILURE|COMPILATION ERROR|mvn.*failed)' /tmp/lawconnect.log | tail -10 || echo 'No se encontraron errores específicos de Maven'
+        echo ''
+        echo '📋 Últimas líneas del log relacionadas con compilación:'
+        grep -A 5 -B 5 -iE '(compilando|building|mvn)' /tmp/lawconnect.log | tail -20
+    " 2>/dev/null
+    echo ""
+    echo -e "${YELLOW}💡 Solución:${NC}"
+    echo -e "   1. Revisa los logs de compilación arriba"
+    echo -e "   2. Verifica que Java y Maven estén instalados correctamente"
+    echo -e "   3. Intenta ejecutar start.sh manualmente en la VM para ver más detalles"
+    echo ""
+    JARS_MISSING=true
+fi
+echo ""
+
+# Si faltan JARs, no continuar con la verificación de servicios
+if [ "$JARS_MISSING" = "true" ]; then
+    echo -e "${RED}❌ No se puede continuar sin los JARs compilados.${NC}"
+    echo -e "${YELLOW}   Por favor, corrige los errores de compilación y vuelve a intentar.${NC}"
+    exit 1
+fi
 
 # Verificar si start.sh terminó correctamente y esperar a que los servicios estén listos
 echo ""
