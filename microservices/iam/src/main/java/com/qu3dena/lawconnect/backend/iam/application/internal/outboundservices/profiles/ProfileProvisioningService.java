@@ -39,16 +39,26 @@ public class ProfileProvisioningService {
      */
     public void provisionProfileFor(UserAggregate userAggregate) {
         try {
+            LOGGER.info("Attempting to provision profile for user {} with role {}", 
+                    userAggregate.getId(), userAggregate.getRole().getName());
+            
             if (userAggregate.getRole().getName() == Roles.ROLE_LAWYER) {
                 createLawyerProfile(userAggregate);
+                LOGGER.info("Successfully created lawyer profile for user {}", userAggregate.getId());
             } else if (userAggregate.getRole().getName() == Roles.ROLE_CLIENT) {
                 createClientProfile(userAggregate);
+                LOGGER.info("Successfully created client profile for user {}", userAggregate.getId());
             } else {
                 LOGGER.info("Skipping profile provisioning for user {} because role {} has no profile.",
                         userAggregate.getId(), userAggregate.getRoleName());
             }
         } catch (Exception exception) {
-            LOGGER.error("Failed to provision profile for user {}: {}", userAggregate.getId(), exception.getMessage());
+            LOGGER.error("Failed to provision profile for user {} with role {}: {} - {}", 
+                    userAggregate.getId(), 
+                    userAggregate.getRole().getName(),
+                    exception.getClass().getSimpleName(),
+                    exception.getMessage(), 
+                    exception);
         }
     }
 
@@ -60,6 +70,9 @@ public class ProfileProvisioningService {
                 generatePlaceholderDni(userAggregate.getId()),
                 new ContactInfoPayload(DEFAULT_PHONE_NUMBER, DEFAULT_ADDRESS)
         );
+
+        LOGGER.debug("Creating client profile with payload: userId={}, firstname={}, lastname={}, dni={}", 
+                payload.userId(), payload.firstname(), payload.lastname(), payload.dni());
 
         profilesRestClient.post()
                 .uri("/api/v1/clients")
@@ -78,6 +91,9 @@ public class ProfileProvisioningService {
                 DEFAULT_DESCRIPTION,
                 Set.of()
         );
+
+        LOGGER.debug("Creating lawyer profile with payload: userId={}, firstname={}, lastname={}, dni={}", 
+                payload.userId(), payload.firstname(), payload.lastname(), payload.dni());
 
         profilesRestClient.post()
                 .uri("/api/v1/lawyers")
