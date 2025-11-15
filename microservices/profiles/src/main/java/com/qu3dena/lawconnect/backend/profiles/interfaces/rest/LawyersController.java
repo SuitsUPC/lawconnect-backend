@@ -82,7 +82,7 @@ public class LawyersController {
             @ApiResponse(responseCode = "404", description = "Lawyer profile not found")
     })
     public ResponseEntity<LawyerResource> getLawyerProfileByUserId(
-            @PathVariable String userId
+            @PathVariable("userId") String userId
     ) {
         var query = new GetLawyerByUserIdQuery(UUID.fromString(userId));
         var maybeItem = queryService.handle(query);
@@ -102,7 +102,7 @@ public class LawyersController {
             @ApiResponse(responseCode = "400", description = "Invalid specialty names")
     })
     public ResponseEntity<LawyerResource> updateLawyerSpecialties(
-            @PathVariable String userId,
+            @PathVariable("userId") String userId,
             @RequestBody UpdateLawyerSpecialtiesResource resource
     ) {
         var command = UpdateLawyerSpecialtiesCommandFromResourceAssembler.toCommandFromResource(
@@ -126,7 +126,7 @@ public class LawyersController {
             @ApiResponse(responseCode = "400", description = "Invalid data provided")
     })
     public ResponseEntity<LawyerResource> updateLawyerProfile(
-            @PathVariable String userId,
+            @PathVariable("userId") String userId,
             @RequestBody UpdateLawyerResource resource
     ) {
         var command = UpdateLawyerCommandFromResourceAssembler.toCommandFromResource(

@@ -80,7 +80,7 @@ public class ClientsController {
             @ApiResponse(responseCode = "404", description = "Client profile not found")
     })
     public ResponseEntity<ClientResource> getClientProfileByDni(
-            @PathVariable String userId
+            @PathVariable("userId") String userId
     ) {
         var query = new GetClientByUserIdQuery(UUID.fromString(userId));
         var maybeItem = queryService.handle(query);
@@ -100,7 +100,7 @@ public class ClientsController {
             @ApiResponse(responseCode = "400", description = "Invalid data provided"),
     })
     public ResponseEntity<ClientResource> updateClientProfile(
-            @PathVariable String userId,
+            @PathVariable("userId") String userId,
             @RequestBody UpdateClientResource resource
     ) {
         var command = UpdateClientCommandFromResourceAssembler.toCommandFromResource(
