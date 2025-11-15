@@ -92,13 +92,17 @@ echo "Usuario agregado al grupo docker"
 EONG
 fi
 
-# Instalar Java 17, Git y otras herramientas
+# Instalar Java 17, Git, Maven y otras herramientas
 apt-get update
 apt-get install -y openjdk-17-jdk maven git curl wget
 export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
 export PATH=$PATH:$JAVA_HOME/bin
+export MAVEN_HOME=/usr/share/maven
+export PATH=$PATH:$MAVEN_HOME/bin
 echo "export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> /etc/profile
 echo "export PATH=\$PATH:\$JAVA_HOME/bin" >> /etc/profile
+echo "export MAVEN_HOME=/usr/share/maven" >> /etc/profile
+echo "export PATH=\$PATH:\$MAVEN_HOME/bin" >> /etc/profile
 
 # Instalar Docker Compose
 curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -239,12 +243,23 @@ gcloud compute ssh "$VM_NAME" --zone="$ZONE" --command="
     echo \"JAVA_HOME=\$JAVA_HOME\"
     echo \"PATH=\$PATH\"
     echo ''
-    echo 'Verificando Maven wrapper:'
+    echo 'Verificando Maven:'
+    if command -v mvn > /dev/null 2>&1; then
+        mvn --version 2>&1 | head -3 || echo '❌ Maven no funciona'
+    else
+        echo '❌ Maven no está instalado'
+    fi
+    echo ''
+    echo 'Verificando Maven wrapper (opcional):'
     if [ -f mvnw ]; then
         ls -lh mvnw
-        bash mvnw --version 2>&1 | head -5 || echo '❌ Maven wrapper no funciona'
+        if [ -d .mvn/wrapper ]; then
+            echo '✅ Maven wrapper está completo (.mvn/wrapper existe)'
+        else
+            echo '⚠️  Maven wrapper incompleto (falta .mvn/wrapper), se usará Maven del sistema'
+        fi
     else
-        echo '❌ mvnw no encontrado'
+        echo 'ℹ️  mvnw no encontrado, se usará Maven del sistema'
     fi
 " 2>/dev/null
 echo ""

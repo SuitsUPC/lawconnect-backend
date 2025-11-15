@@ -94,15 +94,25 @@ compile_service() {
     echo -e "${BLUE}📦 Compilando ${service_name}...${NC}"
     cd "$PROJECT_ROOT/$service_path"
     
-    # Verificar que mvnw existe y tiene permisos
-    if [ ! -f "$MVNW" ]; then
-        echo -e "${RED}❌ Error: mvnw no encontrado en $MVNW${NC}"
+    # Determinar qué comando de Maven usar
+    MVN_CMD=""
+    
+    # Intentar usar Maven wrapper primero
+    if [ -f "$MVNW" ] && [ -d "$PROJECT_ROOT/.mvn/wrapper" ]; then
+        MVN_CMD="bash $MVNW"
+        echo -e "${BLUE}   Usando Maven wrapper${NC}"
+    # Si no funciona el wrapper, usar Maven instalado
+    elif command -v mvn > /dev/null 2>&1; then
+        MVN_CMD="mvn"
+        echo -e "${BLUE}   Usando Maven instalado en el sistema${NC}"
+    else
+        echo -e "${RED}❌ Error: No se encontró Maven (ni wrapper ni instalado)${NC}"
         return 1
     fi
     
     # Compilar sin -q para ver errores, pero redirigir a un log temporal
     COMPILE_LOG="/tmp/compile_${service_name}.log"
-    if bash "$MVNW" clean package spring-boot:repackage -DskipTests > "$COMPILE_LOG" 2>&1; then
+    if $MVN_CMD clean package spring-boot:repackage -DskipTests > "$COMPILE_LOG" 2>&1; then
         echo -e "${GREEN}✅ ${service_name} compilado correctamente${NC}"
         # Verificar que el JAR existe
         JAR_FILE="$PROJECT_ROOT/$service_path/target/${service_name,,}-service-0.0.1-SNAPSHOT.jar"
