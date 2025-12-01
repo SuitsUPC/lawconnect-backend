@@ -32,21 +32,25 @@ public class ProfileProvisioningService {
     }
 
     /**
-     * Creates a placeholder profile in the Profiles service for the provided {@link UserAggregate}.
+     * Creates a profile in the Profiles service for the provided {@link UserAggregate}.
      * If the remote call fails, the exception is logged but the sign-up flow is not interrupted.
      *
      * @param userAggregate the recently created user
+     * @param firstname the first name of the user
+     * @param lastname the last name of the user
+     * @param phoneNumber the phone number of the user
+     * @param dni the DNI of the user
      */
-    public void provisionProfileFor(UserAggregate userAggregate) {
+    public void provisionProfileFor(UserAggregate userAggregate, String firstname, String lastname, String phoneNumber, String dni) {
         try {
             LOGGER.info("Attempting to provision profile for user {} with role {}", 
                     userAggregate.getId(), userAggregate.getRole().getName());
             
             if (userAggregate.getRole().getName() == Roles.ROLE_LAWYER) {
-                createLawyerProfile(userAggregate);
+                createLawyerProfile(userAggregate, firstname, lastname, phoneNumber, dni);
                 LOGGER.info("Successfully created lawyer profile for user {}", userAggregate.getId());
             } else if (userAggregate.getRole().getName() == Roles.ROLE_CLIENT) {
-                createClientProfile(userAggregate);
+                createClientProfile(userAggregate, firstname, lastname, phoneNumber, dni);
                 LOGGER.info("Successfully created client profile for user {}", userAggregate.getId());
             } else {
                 LOGGER.info("Skipping profile provisioning for user {} because role {} has no profile.",
@@ -62,13 +66,16 @@ public class ProfileProvisioningService {
         }
     }
 
-    private void createClientProfile(UserAggregate userAggregate) {
+    private void createClientProfile(UserAggregate userAggregate, String firstname, String lastname, String phoneNumber, String dni) {
         var payload = new CreateClientPayload(
                 userAggregate.getId(),
-                deriveFirstname(userAggregate.getUsername()),
-                deriveLastname(userAggregate.getUsername()),
-                generatePlaceholderDni(userAggregate.getId()),
-                new ContactInfoPayload(DEFAULT_PHONE_NUMBER, DEFAULT_ADDRESS)
+                firstname != null && !firstname.isBlank() ? firstname : deriveFirstname(userAggregate.getUsername()),
+                lastname != null && !lastname.isBlank() ? lastname : deriveLastname(userAggregate.getUsername()),
+                dni != null && !dni.isBlank() ? dni : generatePlaceholderDni(userAggregate.getId()),
+                new ContactInfoPayload(
+                        phoneNumber != null && !phoneNumber.isBlank() ? phoneNumber : DEFAULT_PHONE_NUMBER,
+                        DEFAULT_ADDRESS
+                )
         );
 
         LOGGER.debug("Creating client profile with payload: userId={}, firstname={}, lastname={}, dni={}", 
@@ -81,13 +88,16 @@ public class ProfileProvisioningService {
                 .toBodilessEntity();
     }
 
-    private void createLawyerProfile(UserAggregate userAggregate) {
+    private void createLawyerProfile(UserAggregate userAggregate, String firstname, String lastname, String phoneNumber, String dni) {
         var payload = new CreateLawyerPayload(
                 userAggregate.getId(),
-                deriveFirstname(userAggregate.getUsername()),
-                deriveLastname(userAggregate.getUsername()),
-                generatePlaceholderDni(userAggregate.getId()),
-                new ContactInfoPayload(DEFAULT_PHONE_NUMBER, DEFAULT_ADDRESS),
+                firstname != null && !firstname.isBlank() ? firstname : deriveFirstname(userAggregate.getUsername()),
+                lastname != null && !lastname.isBlank() ? lastname : deriveLastname(userAggregate.getUsername()),
+                dni != null && !dni.isBlank() ? dni : generatePlaceholderDni(userAggregate.getId()),
+                new ContactInfoPayload(
+                        phoneNumber != null && !phoneNumber.isBlank() ? phoneNumber : DEFAULT_PHONE_NUMBER,
+                        DEFAULT_ADDRESS
+                ),
                 DEFAULT_DESCRIPTION,
                 Set.of()
         );

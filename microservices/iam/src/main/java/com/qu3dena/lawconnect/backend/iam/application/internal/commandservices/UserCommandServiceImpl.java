@@ -79,7 +79,7 @@ public class UserCommandServiceImpl implements UserCommandService {
 
         var saved = userRepository.save(user);
 
-        profileProvisioningService.provisionProfileFor(saved);
+        profileProvisioningService.provisionProfileFor(saved, command.firstname(), command.lastname(), command.phoneNumber(), command.dni());
 
         var event = new UserRegisteredEvent(saved.getId());
 
