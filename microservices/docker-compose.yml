@@ -68,12 +68,9 @@ services:
       MYSQL_ROOT_PASSWORD: maxoz9987
       JWT_SECRET: cd2f1644-8b83-4f93-ab86-a156bb696f69
       SPRING_DATASOURCE_URL: jdbc:mysql://iam-db:3306/iam-db
-      PROFILES_SERVICE_URL: http://profiles-service:8082
     depends_on:
       iam-db:
         condition: service_healthy
-      profiles-service:
-        condition: service_started
     networks:
       - lawconnect-network
     restart: unless-stopped
