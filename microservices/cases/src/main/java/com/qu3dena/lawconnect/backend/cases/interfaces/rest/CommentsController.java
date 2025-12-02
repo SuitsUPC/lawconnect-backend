@@ -64,7 +64,7 @@ public class CommentsController {
             @ApiResponse(responseCode = "200", description = "Comments retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Case not found")
     })
-    public ResponseEntity<List<CommentResource>> getComments(@RequestParam UUID caseId) {
+    public ResponseEntity<List<CommentResource>> getComments(@RequestParam("caseId") UUID caseId) {
         var list = commentQueryService.handle(
                         new GetCommentsByCaseIdQuery(caseId)
                 ).stream().map(CommentResourceFromEntityAssembler::toResourceFromEntity)
@@ -85,7 +85,7 @@ public class CommentsController {
             @ApiResponse(responseCode = "404", description = "Lawyer not found")
     })
     public ResponseEntity<List<CommentResource>> getFinalCommentsByLawyer(
-            @PathVariable UUID lawyerId
+            @PathVariable("lawyerId") UUID lawyerId
     ) {
         var comments = commentQueryService
                 .handle(new GetFinalCommentsByLawyerIdQuery(lawyerId))
@@ -171,8 +171,8 @@ public class CommentsController {
             @ApiResponse(responseCode = "404", description = "Comment not found")
     })
     public ResponseEntity<Void> deleteComment(
-            @PathVariable Long commentId,
-            @RequestParam UUID authorId
+            @PathVariable("commentId") Long commentId,
+            @RequestParam("authorId") UUID authorId
     ) {
         commentCommandService.handle(new DeleteCommentCommand(commentId, authorId));
         return ResponseEntity.noContent().build();

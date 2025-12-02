@@ -6,8 +6,10 @@ import com.qu3dena.lawconnect.backend.profiles.domain.services.ClientCommandServ
 import com.qu3dena.lawconnect.backend.profiles.domain.services.ClientQueryService;
 import com.qu3dena.lawconnect.backend.profiles.interfaces.rest.resources.ClientResource;
 import com.qu3dena.lawconnect.backend.profiles.interfaces.rest.resources.CreateClientResource;
+import com.qu3dena.lawconnect.backend.profiles.interfaces.rest.resources.UpdateClientResource;
 import com.qu3dena.lawconnect.backend.profiles.interfaces.rest.transform.ClientResourceFromEntityAssembler;
 import com.qu3dena.lawconnect.backend.profiles.interfaces.rest.transform.CreateClientCommandFromResourceAssembler;
+import com.qu3dena.lawconnect.backend.profiles.interfaces.rest.transform.UpdateClientCommandFromResourceAssembler;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
@@ -78,7 +80,7 @@ public class ClientsController {
             @ApiResponse(responseCode = "404", description = "Client profile not found")
     })
     public ResponseEntity<ClientResource> getClientProfileByDni(
-            @PathVariable String userId
+            @PathVariable("userId") String userId
     ) {
         var query = new GetClientByUserIdQuery(UUID.fromString(userId));
         var maybeItem = queryService.handle(query);
@@ -88,5 +90,29 @@ public class ClientsController {
 
         var resource = ClientResourceFromEntityAssembler.toResourceFromEntity(maybeItem.get());
         return ResponseEntity.ok(resource);
+    }
+
+    @PutMapping("{userId}")
+    @Operation(summary = "Update client profile", description = "Updates the general information of a client profile")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Client profile updated successfully"),
+            @ApiResponse(responseCode = "404", description = "Client profile not found"),
+            @ApiResponse(responseCode = "400", description = "Invalid data provided"),
+    })
+    public ResponseEntity<ClientResource> updateClientProfile(
+            @PathVariable("userId") String userId,
+            @RequestBody UpdateClientResource resource
+    ) {
+        var command = UpdateClientCommandFromResourceAssembler.toCommandFromResource(
+                UUID.fromString(userId), resource
+        );
+
+        var client = commandService.handle(command);
+
+        if (client.isEmpty())
+            return ResponseEntity.notFound().build();
+
+        var clientResource = ClientResourceFromEntityAssembler.toResourceFromEntity(client.get());
+        return ResponseEntity.ok(clientResource);
     }
 }

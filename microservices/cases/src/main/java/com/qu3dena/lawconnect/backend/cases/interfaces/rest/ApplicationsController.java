@@ -99,8 +99,8 @@ public class ApplicationsController {
             @ApiResponse(responseCode = "404", description = "Application not found")
     })
     public ResponseEntity<ApplicationResource> acceptApplication(
-            @PathVariable Long applicationId,
-            @RequestParam UUID clientId
+            @PathVariable("applicationId") Long applicationId,
+            @RequestParam("clientId") UUID clientId
     ) {
         var command = new AcceptApplicationCommand(applicationId, clientId);
 
@@ -126,8 +126,8 @@ public class ApplicationsController {
             @ApiResponse(responseCode = "404", description = "Application not found")
     })
     public ResponseEntity<ApplicationResource> rejectApplication(
-            @PathVariable Long applicationId,
-            @RequestParam UUID clientId
+            @PathVariable("applicationId") Long applicationId,
+            @RequestParam("clientId") UUID clientId
     ) {
         var command = new RejectApplicationCommand(applicationId, clientId);
 
@@ -150,7 +150,7 @@ public class ApplicationsController {
             @ApiResponse(responseCode = "200", description = "Applications retrieved successfully"),
             @ApiResponse(responseCode = "404", description = "Case not found", content = @Content)
     })
-    public ResponseEntity<List<ApplicationResource>> getApplicationsByCase(@RequestParam UUID caseId) {
+    public ResponseEntity<List<ApplicationResource>> getApplicationsByCase(@RequestParam("caseId") UUID caseId) {
         var list = applicationQueryService.handle(
                         new GetApplicationsByCaseIdQuery(caseId)
                 ).stream().map(ApplicationResourceFromEntityAssembler::toResourceFromEntity)

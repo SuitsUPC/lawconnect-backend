@@ -29,7 +29,11 @@ public class SignUpCommandFromResourceAssembler {
         return new SignUpCommand(
                 resource.username(),
                 resource.password(),
-                roleEnum
+                roleEnum,
+                resource.firstname(),
+                resource.lastname(),
+                resource.phoneNumber(),
+                resource.dni()
         );
     }
 }

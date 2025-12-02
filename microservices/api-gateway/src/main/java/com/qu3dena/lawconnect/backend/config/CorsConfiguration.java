@@ -22,9 +22,9 @@ public class CorsConfiguration {
     public CorsWebFilter corsWebFilter() {
         org.springframework.web.cors.CorsConfiguration corsConfig = new org.springframework.web.cors.CorsConfiguration();
         
-        // Allow requests from any origin (development mode)
-        // In production, use: corsConfig.addAllowedOrigin("https://yourdomain.com")
-        corsConfig.addAllowedOriginPattern("*");
+        // Allow requests from Vercel frontend and any origin (development mode)
+        corsConfig.addAllowedOrigin("https://lawconnect-frontend.vercel.app");
+        corsConfig.addAllowedOriginPattern("*"); // Keep for development
         
         // Allow all HTTP methods
         corsConfig.addAllowedMethod("GET");

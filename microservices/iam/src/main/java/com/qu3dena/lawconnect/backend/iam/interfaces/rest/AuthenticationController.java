@@ -49,11 +49,11 @@ public class AuthenticationController {
     /**
      * Registers a new user with the provided sign-up information.
      *
-     * @param resource the sign-up resource containing username, password, and role
+     * @param resource the sign-up resource containing username, password, role, firstname, lastname, phoneNumber, and dni
      * @return a {@link ResponseEntity} containing the created {@link UserResource} and HTTP status
      */
     @PostMapping("/sign-up")
-    @Operation(summary = "Sign up a new user", description = "Sign up a new user with the provided username, password, and roles.")
+    @Operation(summary = "Sign up a new user", description = "Sign up a new user with the provided username, password, role, firstname, lastname, phoneNumber, and dni.")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "User created successfully."),
             @ApiResponse(responseCode = "400", description = "Bad request.")

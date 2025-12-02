@@ -261,6 +261,90 @@ docker tag microservices-iam-service:latest tu-usuario/iam-service:latest
 docker push tu-usuario/iam-service:latest
 ```
 
+## 🚀 Comandos de Despliegue - GCP
+
+### Configuración
+- **Proyecto**: `xantinamobileapp`
+- **Zona**: `southamerica-east1-a`
+- **VM**: `lawconnect-vm`
+
+### 1️⃣ Desplegar desde cero
+
+```bash
+cd lawconnect-backend && ./deploy-gcp-vm-simple.sh
+```
+
+Este comando:
+- Crea la VM en GCP si no existe
+- Instala Docker, Java 17, Maven y Git
+- Clona el repositorio desde GitHub
+- Compila los microservicios
+- Levanta los contenedores Docker
+- Configura Cloudflare Tunnel automáticamente
+- Configura auto-start para reinicios de la VM
+
+### 2️⃣ Re-desplegar con cambios del backend
+
+```bash
+cd lawconnect-backend
+
+git add . && git commit -m "Cambios" && git push origin feature/deploy-gcp
+
+./deploy-gcp-vm-simple.sh
+```
+
+El script detectará que la VM ya existe y:
+- Limpiará el proyecto anterior
+- Clonará la versión más reciente del repositorio
+- Recompilará y redesplegará los servicios
+
+### 3️⃣ Obtener URL de Cloudflare Tunnel
+
+```bash
+cd lawconnect-backend && ./get-tunnel-url.sh
+```
+
+Útil cuando:
+- Reinicias la VM y necesitas la nueva URL del tunnel
+- El tunnel se reinició y cambió la URL
+
+### 4️⃣ Apagar la VM
+
+```bash
+gcloud compute instances stop lawconnect-vm --zone=southamerica-east1-a
+```
+
+**Nota**: Al apagar la VM, se detienen todos los servicios. Al encenderla de nuevo, se iniciarán automáticamente gracias al auto-start configurado.
+
+### 5️⃣ Encender la VM
+
+```bash
+gcloud compute instances start lawconnect-vm --zone=southamerica-east1-a
+```
+
+Después de encender la VM, espera 2-3 minutos y ejecuta `./get-tunnel-url.sh` para obtener la nueva URL del tunnel.
+
+### 6️⃣ Solo configurar Cloudflare (sin re-desplegar)
+
+```bash
+cd lawconnect-backend && ./setup-cloudflare-only.sh
+```
+
+Úsalo cuando:
+- Los servicios ya están corriendo
+- Solo necesitas configurar o reiniciar el Cloudflare Tunnel
+- El tunnel dejó de funcionar
+
+### 📝 Notas Importantes
+
+- **Auto-start**: La VM está configurada para iniciar automáticamente todos los servicios al reiniciarse
+- **URL del Tunnel**: La URL de Cloudflare Tunnel cambia cada vez que se reinicia. Usa `./get-tunnel-url.sh` para obtenerla
+- **Variables de Entorno**: Actualiza `NEXT_PUBLIC_API_URL` en Vercel con la URL del tunnel obtenida
+- **Logs**: Puedes ver los logs con:
+  ```bash
+  gcloud compute ssh lawconnect-vm --zone=southamerica-east1-a --command='tail -f /var/log/lawconnect.log'
+  ```
+
 ## 🤝 Contribución
 
 1. Haz fork del proyecto

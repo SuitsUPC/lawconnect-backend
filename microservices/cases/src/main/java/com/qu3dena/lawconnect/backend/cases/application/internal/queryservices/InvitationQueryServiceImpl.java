@@ -1,6 +1,7 @@
 package com.qu3dena.lawconnect.backend.cases.application.internal.queryservices;
 
 import com.qu3dena.lawconnect.backend.cases.domain.model.entities.Invitation;
+import com.qu3dena.lawconnect.backend.cases.domain.model.queries.GetInvitationsByCaseIdQuery;
 import com.qu3dena.lawconnect.backend.cases.domain.model.queries.GetInvitationsByLawyerIdQuery;
 import com.qu3dena.lawconnect.backend.cases.domain.model.valueobjects.InvitationStatus;
 import com.qu3dena.lawconnect.backend.cases.domain.services.InvitationQueryService;
@@ -39,5 +40,16 @@ public class InvitationQueryServiceImpl implements InvitationQueryService {
     @Override
     public List<Invitation> handle(GetInvitationsByLawyerIdQuery query) {
         return invitationRepository.findByLawyerIdAndStatus(query.lawyerId(), InvitationStatus.PENDING);
+    }
+
+    /**
+     * Handles the {@code GetInvitationsByCaseIdQuery} to retrieve invitations for a specific legal case.
+     *
+     * @param query the query object containing the case identifier
+     * @return a list of {@code Invitation} entities for the specified legal case
+     */
+    @Override
+    public List<Invitation> handle(GetInvitationsByCaseIdQuery query) {
+        return invitationRepository.findByLegalCase_IdAndStatus(query.caseId(), InvitationStatus.PENDING);
     }
 }
